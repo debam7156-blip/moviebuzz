@@ -18,32 +18,34 @@ object LetterboxdAdapter {
             it.equals("ratings.csv", true) ||
             it.equals("diary.csv", true) ||
             it.equals("watched.csv", true) ||
+            it.equals("watched.csv", true) ||
             it.equals("watchlist.csv", true)
         }
 
     fun parse(tables: Map<String, CsvParser.CsvTable>): List<ImportRecord> {
         val records = mutableListOf<ImportRecord>()
-        val seen = mutableMapOf<String, ImportRecord>()
+        val merged = mutableMapOf<String, ImportRecord>()
+        val order = mutableListOf<String>()
 
         fun upsert(record: ImportRecord): ImportRecord {
-            val key = "${record.title.lowercase()}\u0000${record.year}"
-            val existing = seen[key]
+            val key = "${record.title.lowercase()}|${record.year}"
+            val existing = merged[key]
             if (existing == null) {
-                seen[key] = record
+                merged[key] = record
+                order.add(key)
                 return record
             }
-            // Merge: keep the most informative version
-            val merged = existing.copy(
+            val m = existing.copy(
                 rating = existing.rating ?: record.rating,
                 watchedOn = existing.watchedOn ?: record.watchedOn,
                 review = existing.review ?: record.review,
                 notes = existing.notes ?: record.notes,
                 isFavorite = existing.isFavorite || record.isFavorite,
                 watchlist = existing.watchlist || record.watchlist,
-                listName = existing.listName ?: record.listName
+                rewatch = existing.rewatch || record.rewatch
             )
-            seen[key] = merged
-            return merged
+            merged[key] = m
+            return m
         }
 
         fun base(row: Map<String, String>, i: Int, file: String): ImportRecord? {
@@ -58,7 +60,7 @@ object LetterboxdAdapter {
                 review = row["review"]?.takeIf { it.isNotBlank() },
                 notes = row["notes"]?.takeIf { it.isNotBlank() },
                 isFavorite = false,
-                watchlist = false,
+               boxd watchlist = false,
                 listName = null,
                 rewatch = row["rewatch"]?.trim()?.equals("Yes", true) ?: false,
                 source = "Letterboxd",
@@ -68,24 +70,25 @@ object LetterboxdAdapter {
             )
         }
 
-        // Diary entries — the richest source: dates, ratings, rewatch flags, list memberships, notes
+        // Diary — richest source
         tables["diary.csv"]?.let { t ->
             t.rows.forEachIndexed { i, row ->
-                base(row, i, "diary.csv")?.let { rec ->
-                    val diaryLists = row["lists"]?.split('/').mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } } ?: emptyList()
-                    val withDate = rec.copy(watchedOn = row["date"]?.takeIf { it.isNotBlank() } ?: rec.watchedOn)
-                    upsert(withDate)
-                    for (listName in diaryLists) {
-                        records.add(withDate.copy(listName = listName))
-                    }
-                    if (diaryLists.isEmpty()) records.add(withDate)
+                val rec = base(row, i, "diary.csv") ?: return@forEachIndexed
+                val diaryLists = row["lists"]
+                    ?.split('/')
+                    ?.mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+                    ?: emptyList()
+                upsert(rec)
+                for (listName in diaryLists) {
+                    records.add(rec.copy(listName = listName))
                 }
             }
         }
 
-        // Watched list
+        // Watched
         tables["watched.csv"]?.let { t ->
-            t rowsIndexed@{
+            t.rows.forEachIndexed { i, row ->
+                base(row, i, "watched.csv")?.let { upsert(it) }
             }
         }
 
@@ -110,13 +113,24 @@ object LetterboxdAdapter {
             }
         }
 
-        records.addAll(seen.values)
+        // Custom lists (list-*.csv in the lists/ folder)
+        tables.filterKeys { it.contains("list-") }.forEach { (file, t) ->
+            val listName = file.substringAfterLast('/').removePrefix("list-").removeSuffix(".csv")
+                .replace('-', ' ').trim()
+            t.rows.forEachIndexed { i, row ->
+                base(row, i, file)?.let { upsert(it.copy(listName = listName)) }
+                records.add(base(row, i, file)?.copy(listName = listName) ?: return@forEachIndexed)
+            }
+        }
+
+        records.addAll(order.map { merged[it]!! })
         return records
     }
 
-    /** Letterboxd ratings are whole numbers 0.5–5.0 in 0.5 steps; convert to a 0–10 scale. */
+    /** Letterboxd ratings are 0.5–5.0 in half-star steps; convert to 0–10. */
     internal fun ratingToDouble(raw: String): Double? {
         val v = raw.trim().toDoubleOrNull() ?: return null
+        if (v <= 0.0 || v > 5.0) return null
         return v * 2.0
     }
 }
