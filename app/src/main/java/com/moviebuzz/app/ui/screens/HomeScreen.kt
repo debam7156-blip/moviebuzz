@@ -50,28 +50,10 @@ fun HomeScreen(navController: NavController) {
             OutlinedButton(onClick = { navController.navigate(Routes.AI) }) {
                 Text("Ask MOVIEBUZZ AI")
             }
-        }
-    }
-}
-
-@Composable
-fun SettingsScreen(navController: NavController) {
-    Scaffold(topBar = { TopAppBar(title = { Text("Settings") }) }) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-        ) {
-            Text("Settings", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(12.dp))
-            Text(
-                "API keys are configured at build time via local.properties and never stored inside the app. " +
-                    "Backup, restore, and data deletion live here in the full build.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = { navController.navigate(Routes.SETTINGS) }) {
+                Text("Settings")
+            }
         }
     }
 }
