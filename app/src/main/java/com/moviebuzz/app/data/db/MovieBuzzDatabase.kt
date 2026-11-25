@@ -1,19 +1,10 @@
 package com.moviebuzz.app.data.db
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverter
 import androidx.room.TypeConverters
-import kotlinx.serialization.json.Json
-
-class StringListConverter {
-    @TypeConverter
-    fun fromStringList(value: List<String>): String = value.joinToString("|||")
-
-    @TypeConverter
-    fun toStringList(value: String): List<String> =
-        if (value.isEmpty()) emptyList() else value.split("|||")
-}
 
 @Database(
     entities = [
@@ -35,4 +26,20 @@ abstract class MovieBuzzDatabase : RoomDatabase() {
     abstract fun customListDao(): CustomListDao
     abstract fun tagDao(): TagDao
     abstract fun importUnresolvedDao(): ImportUnresolvedDao
+
+    companion object {
+        @Volatile private var instance: MovieBuzzDatabase? = null
+
+        fun get(context: Context): MovieBuzzDatabase =
+            instance ?: synchronized(this) {
+                instance ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    MovieBuzzDatabase::class.java,
+                    "moviebuzz.db"
+                )
+                    .fallbackToDestructiveMigrationOnDowngrade()
+                    .build()
+                    .also { instance = it }
+            }
+    }
 }
