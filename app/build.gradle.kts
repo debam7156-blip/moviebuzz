@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -23,14 +25,14 @@ android {
             val f = rootProject.file("local.properties")
             if (f.exists()) f.inputStream().use { load(it) }
         }
-        val tmdbKey = (localProps.getProperty("MOVIEBUZZ_TMDB_API_KEY")
-            ?: System.getenv("MOVIEBUZZ_TMDB_API_KEY") ?: "")
-        val aiEndpoint = (localProps.getProperty("MOVIEBUZZ_AI_ENDPOINT")
-            ?: System.getenv("MOVIEBUZZ_AI_ENDPOINT") ?: "")
-        val syncUrl = (localProps.getProperty("MOVIEBUZZ_SYNC_URL")
-            ?: System.getenv("MOVIEBUZZ_SYNC_URL") ?: "")
-        val syncToken = (localProps.getProperty("MOVIEBUZZ_SYNC_TOKEN")
-            ?: System.getenv("MOVIEBUZZ_SYNC_TOKEN") ?: "")
+        val tmdbKey = localProps.getProperty("MOVIEBUZZ_TMDB_API_KEY")
+            ?: System.getenv("MOVIEBUZZ_TMDB_API_KEY") ?: ""
+        val aiEndpoint = localProps.getProperty("MOVIEBUZZ_AI_ENDPOINT")
+            ?: System.getenv("MOVIEBUZZ_AI_ENDPOINT") ?: ""
+        val syncUrl = localProps.getProperty("MOVIEBUZZ_SYNC_URL")
+            ?: System.getenv("MOVIEBUZZ_SYNC_URL") ?: ""
+        val syncToken = localProps.getProperty("MOVIEBUZZ_SYNC_TOKEN")
+            ?: System.getenv("MOVIEBUZZ_SYNC_TOKEN") ?: ""
 
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
         buildConfigField("String", "AI_ENDPOINT", "\"$aiEndpoint\"")
