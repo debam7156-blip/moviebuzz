@@ -23,6 +23,9 @@ interface WatchEventDao {
     @Query("SELECT * FROM watch_events ORDER BY watchedOn ASC")
     fun observeAll(): Flow<List<WatchEventEntity>>
 
+    @Query("SELECT * FROM watch_events ORDER BY watchedOn ASC")
+    suspend fun observeAllSnapshot(): List<WatchEventEntity>
+
     @Query("SELECT COUNT(*) FROM watch_events")
     suspend fun count(): Int
 
