@@ -1,0 +1,32 @@
+# Built artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Java/Kotlin
+*.class
+
+# Gradle
+.gradle/
+build/
+/local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing (never commit keystores or credentials)
+*.keystore
+*.jks
+!debug.keystore
+
+# OS
+.DS_Store
+
+# Wrapper JAR is generated locally (gradle wrapper) / installed in CI
+gradle/wrapper/gradle-wrapper.jar
