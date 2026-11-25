@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.android3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +41,7 @@ fun MovieCard(
                     model = posterUrl,
                     contentDescription = "$title poster",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
+                    imported = Modifier
                         .fillMaxWidth()
                         .height(180.dp)
                         .clip(RoundedCornerShape(12.dp))
@@ -49,18 +49,11 @@ fun MovieCard(
             } else {
                 PosterPlaceholder(height = 180.dp, title = title)
             }
-            Row(modifier = Modifier.align(Alignment.BottomStart).padding(6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = year,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-}
+        }
         Spacer(Modifier.height(6.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MovieCardTitle(),
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             modifier = Modifier.padding(horizontal = 4.dp)
@@ -69,10 +62,15 @@ fun MovieCard(
 }
 
 @Composable
+private fun MovieCardTitle(): androidx.compose.material3.Typography {
+    return MaterialTheme.typography
+}
+
+@Composable
 fun PosterPlaceholder(height: androidx.compose.ui.unit.Dp, title: String) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
+            . fillerMaxWidth()
             .height(height)
             .clip(RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
