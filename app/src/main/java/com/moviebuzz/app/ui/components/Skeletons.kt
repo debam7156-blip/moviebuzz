@@ -14,17 +14,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun shimmerBrush(): androidx.compose.ui.graphics.Brush {
+fun shimmerBrush(): Brush {
     val transition = rememberInfiniteTransition(label = "shimmer")
-    val translate = transition.animateFloat(
+    val translate by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1000f,
         animationSpec = infiniteRepeatable(
@@ -34,14 +38,14 @@ fun shimmerBrush(): androidx.compose.ui.graphics.Brush {
         label = "shimmerTranslate"
     )
     val colors = listOf(
-        androidx.compose.ui.graphics.Color(0xFF1C1C1E),
-        androidx.compose.ui.graphics.Color(0xFF2A2A2E),
-        androidx.compose.ui.graphics.Color( 0xFF1C1C1E)
+        Color(0xFF1C1C1E),
+        Color(0xFF2A2A2E),
+        Color(0xFF1C1C1E)
     )
-    return androidx.compose.ui.graphics.Brush.linearGradient(
+    return Brush.linearGradient(
         colors = colors,
-        start = androidx.compose.ui.geometry.Offset(translate.value - 200, 0f),
-        end = androidx.compose.ui.geometry.Offset(translate.value, 200f)
+        start = Offset(translate - 200, 0f),
+        end = Offset(translate, 200f)
     )
 }
 
@@ -50,14 +54,17 @@ fun PosterSkeleton(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .height(160.dp)
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(shimmerBrush())
     )
 }
 
 @Composable
 fun RowSkeleton(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Box(Modifier.fillMaxWidth().height(20.dp).clip(CircleShape).background(shimmerBrush()))
         Box(Modifier.fillMaxWidth().height(14.dp).clip(CircleShape).background(shimmerBrush()))
         Box(Modifier.fillMaxWidth(0.6f).height(14.dp).clip(CircleShape).background(shimmerBrush()))
