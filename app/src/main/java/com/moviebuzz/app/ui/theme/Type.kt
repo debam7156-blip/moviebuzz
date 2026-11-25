@@ -17,13 +17,13 @@ val MovieBuzzTypography = Typography(
     headlineMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 24.sp,
-        lineHeight = 30.sp,
-        letterSpacing = 0.sp
+               fontSize = 24.sp,
+        lineHeight = 30.sp
     ),
     titleLarge = TextStyle(
-        fontFamily =-spec FontWeight.Bold,
+        fontFamily = FontFamily.SansSerif,
         fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
         lineHeight = 26.sp
     ),
     titleMedium = TextStyle(
@@ -32,14 +32,14 @@ val MovieBuzzTypography = Typography(
         fontSize = 16.sp,
         lineHeight = 22.sp
     ),
-    bodyLarge = TextStyle(
+    bodyLarge = TexStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp
     ),
     bodyMedium = TextStyle(
-        letterFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp
@@ -51,7 +51,7 @@ val MovieBuzzTypography = Typography(
         letterSpacing = 0.2.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.SansSansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         letterSpacing = 0.4.sp
