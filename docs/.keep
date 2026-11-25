@@ -1,1 +1,9 @@
-package com.movieBuzz.app.data.import
+# MOVIEBUZZ Documentation
+
+- **API_KEYS.md** — how to get the free TMDB key and where it lives (never in Git)
+- **.github/README.txt** — the CI workflow for automatic APK builds, ready to add
+- **README.md** (repo root) — setup, import formats, security, testing overview
+
+The local-first design means everything personal — library, ratings, reviews,
+lists, statistics, AI recommendations, backup/restore — works with no internet
+and no keys at all.
