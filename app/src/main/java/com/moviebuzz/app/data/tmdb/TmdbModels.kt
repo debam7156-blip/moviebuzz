@@ -40,3 +40,33 @@ data class TmdbCompany(val id: Long, val name: String)
 
 @Serializable
 data class TmdbExternalIds(val imdb_id: String? = null)
+
+@Serializable
+data class TmdbCastMember(val name: String, val character: String? = null, val profile_path: String? = null)
+
+@Serializable
+data class TmdbCrewMember(val name: String, val job: String)
+
+@Serializable
+data class TmdbCredits(val cast: List<TmdbCastMember> = emptyList(), val crew: List<TmdbCrewMember> = emptyList())
+
+@Serializable
+data class TmdbPage(
+    val page: Int,
+    val results: List<TmdbSearchResult> = emptyList(),
+    val total_pages: Int = 1,
+    val total_results: Int = 0
+)
+
+@Serializable
+data class TmdbSearchResult(
+    val id: Long,
+    val title: String,
+    val release_date: String? = null,
+    val overview: String? = null,
+    val poster_path: String? = null,
+    val vote_average: Double? = null,
+    val vote_count: Int? = null
+) {
+    val year: Int? get() = release_date?.takeIf { it.length >= 4 }?.take(4)?.toIntOrNull()
+}
