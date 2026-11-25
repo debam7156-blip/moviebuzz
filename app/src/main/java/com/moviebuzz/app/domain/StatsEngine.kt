@@ -121,9 +121,8 @@ class StatsEngine {
 
     fun yearlyStats(s: LibrarySnapshot): List<YearStat> {
         val watched = watchedMovies(s)
-        val byYear = watched.groupBy { it.year }
-        return byYear.entries
-            .filter { it.key != null }
+        return watched.groupBy { it.year }
+            .filterKeys { it != null }
             .map { (year, moviesInYear) ->
                 val sessions = s.watchEvents.count { parseYear(it.watchedOn) == year }
                 val rated = moviesInYear.mapNotNull { it.personalRating }
@@ -177,18 +176,21 @@ class StatsEngine {
 
     // ---------- RATINGS ----------
 
-    fun ratingDistribution(s: LibrarySnapshot): Map<Int, Int> =
-        watchedMovies(s)
+    /**
+     * Distribution of personal ratings bucketed to whole stars on a 5-star scale.
+     * Ratings are stored on a 0-10 scale, so a star bucket = round(rating / 2).
+     */
+    fun ratingDistribution(s: LibrarySnapshot): Map<Int, Int> {
+        val buckets = watchedMovies(s)
             .mapNotNull { it.personalRating }
             .grouping()
             .eachCount()
-            .mapKeys { roundToWholeStar(it.key) }
-            .let { merged ->
-                (0..10).associate { star -> star to (merged[star] ?: 0) }
-            }
+            .mapKeys { bucketToStar(it.key) }
+        return (0..5).associateWith { star -> buckets[star] ?: 0 }
+    }
 
-    private fun roundToWholeStar(rating: Double): Int =
-        kotlin.math.round(rating / 10.0 * 2.0).toInt().coerceIn(0, 2)
+    private fun bucketToStar(rating: Double): Int =
+        kotlin.math.round(rating / 2.0).toInt().coerceIn(0, 5)
 
     fun averageRatingByYear(s: LibrarySnapshot): List<YearStat> = yearlyStats(s)
 
@@ -199,37 +201,45 @@ class StatsEngine {
 
     // ---------- PEOPLE ----------
 
-    fun topDirectors(s: LibrarySnapshot, limit: Int = 10): List<PersonStat> =
-        personStats(watchedMovies(s).mapNotNull { m -> m.director?.takeIf { d -> d.isNotBlank() }?.let { m } }, limit) { it.director!! }
-
-    fun topActors(s: LibrarySnapshot, limit: Int = 10): List<PersonStat> =
-        personStats(watchedMovies(s), limit) { it.cast }
-
-    private fun personStats(
-        movies: List<MovieForStats>,
-        limit: Int,
-        namesOf: (MovieForStats) -> Any
-    ): List<PersonStat> {
-        val counts = LinkedHashMap<String, MutableList<Double>>()
-        for (movie in movies) {
-            val names = when (val n = namesOf(movie)) {
-                is String -> listOf(n)
-                is List<*> -> n.filterIsInstance<String>()
-                else -> emptyList()
-            }
-            for (name in names) {
-                counts.getOrPut(name.trim()) { mutableListOf() }.add(movie.personalRating ?: continue)
+    fun topDirectors(s: LibrarySnapshot, limit: Int = 10): List<PersonStat> {
+        val watched = watchedMovies(s).filter { !it.director.isNullOrBlank() }
+        val byPerson = LinkedHashMap<String, MutableList<Double?>>()
+        for (movie in watched) {
+            for (director in movie.director!!.split(',', ';').map { it.trim() }.filter { it.isNotBlank() }) {
+                byPerson.getOrPut(director) { mutableListOf() }.add(movie.personalRating)
             }
         }
-        return counts.entries
+        return byPerson.entries
             .map { (name, ratings) ->
+                val present = ratings.filterNotNull()
                 PersonStat(
                     name = name,
                     count = ratings.size,
-                    averageRating = if (ratings.isEmpty()) null else ratings.sum() / ratings.size
+                    averageRating = present.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size }
                 )
             }
-            .sortedByDescending { it.count }
+            .sortedWith(compareByDescending<PersonStat> { it.count }.thenByDescending { it.averageRating ?: -1.0 })
+            .take(limit)
+    }
+
+    fun topActors(s: LibrarySnapshot, limit: Int = 10): List<PersonStat> {
+        val watched = watchedMovies(s)
+        val byPerson = LinkedHashMap<String, MutableList<Double?>>()
+        for (movie in watched) {
+            for (actor in movie.cast.take(10)) {
+                byPerson.getOrPut(actor.trim()) { mutableListOf() }.add(movie.personalRating)
+            }
+        }
+        return byPerson.entries
+            .map { (name, ratings) ->
+                val present = ratings.filterNotNull()
+                PersonStat(
+                    name = name,
+                    count = ratings.size,
+                    averageRating = present.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size }
+                )
+            }
+            .sortedWith(compareByDescending<PersonStat> { it.count }.thenByDescending { it.averageRating ?: -1.0 })
             .take(limit)
     }
 
