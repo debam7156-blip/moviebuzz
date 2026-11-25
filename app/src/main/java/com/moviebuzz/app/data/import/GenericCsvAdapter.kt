@@ -8,37 +8,33 @@ package com.moviebuzz.app.data.import
 object GenericCsvAdapter {
 
     fun detect(table: CsvParser.CsvTable): Boolean {
-        val headers = table.headers
         val titleCandidates = listOf("title", "movie", "name", "movie title", "film")
-        return headers.any { it.trim().lowercase() in titleCandidates }
+        return table.headers.any { it.trim().lowercase() in titleCandidates }
     }
 
-    fun parse(t: CsvParser.CCsvTable, source: String): List<ImportRecord> {
+    fun parse(t: CsvParser.CsvTable, source: String): List<ImportRecord> {
         val records = mutableListOf<ImportRecord>()
-        val h = { candidate: String -> pick(t.headers, candidate) }
         t.rows.forEachIndexed { i, row ->
-            val title = row["title"]?.trim() ?: return@forEachIndexed
-            if (title.isEmpty()) continue
-            val ratingRaw = pick(row, t.headers, "rating")?.let { ratingToDouble(it) }
+            val title = pick(row, t.headers, "title")?.trim()
+            if (title.isNullOrEmpty()) return@forEachIndexed
             records.add(
                 ImportRecord(
                     title = title,
-                    year = pick(row, t.headers, "year")?.toIntOrNull(),
-                    tmdbId = pick(row, t.headers, "tmdbid")?.toLongOrNull(),
+                    year = pick(row, t.headers, "year")?.trim()?.toIntOrNull(),
+                    tmdbId = pick(row, t.headers, "tmdbid")?.trim()?.toLongOrNull(),
                     imdbId = pick(row, t.headers, "imdbid")?.trim(),
-                    rating = ratingRaw,
+                    rating = pick(row, t.headers, "rating")?.let { ratingToDouble(it) },
                     ratingScale = 10,
-                    header = pick(row, t.headers, "date"),
-                    watchedOn = pick(row, t.headers, "date") ?: pick(row, t.headers, "watched on") ?: pick(row, t.headers, "watch date"),
-                    review = pick(row, t.headers, "review"),
-                    notes = pick(row, t.headers, "note") ?: pick(row, t.headers, "notes"),
+                    watchedOn = pick(row, t.headers, "date")?.takeIf { it.isNotBlank() },
+                    review = pick(row, t.headers, "review")?.takeIf { it.isNotBlank() },
+                    notes = pick(row, t.headers, "note")?.takeIf { it.isNotBlank() },
                     isFavorite = pick(row, t.headers, "favorite")?.let { it.trim().equals("true", true) } ?: false,
                     watchlist = pick(row, t.headers, "watchlist")?.let { it.trim().equals("true", true) } ?: false,
-                    listName = pick(row, t.headers, "list") ?: pick(row, t.headers, "list name"),
+                    listName = pick(row, t.headers, "list")?.takeIf { it.isNotBlank() },
                     rewatch = pick(row, t.headers, "rewatch")?.let { it.trim().equals("true", true) } ?: false,
                     source = source,
                     fileLabel = "generic",
-                    rowNumber = i +  adapterBase,
+                    rowNumber = i + 2,
                     rawFields = row
                 )
             )
@@ -49,15 +45,15 @@ object GenericCsvAdapter {
     private fun pick(row: Map<String, String>, headers: List<String>, field: String): String? {
         val candidates = aliases[field] ?: return null
         for (c in candidates) {
-            val idx = headers.indexOfFirst { it.trim().lowercase() == c }
-            if (idx >= 0) return row[headers[idx]]
+            val key = headers.firstOrNull { it.trim().lowercase() == c }
+            if (key != null) return row[key]
         }
         return null
     }
 
     private val aliases = mapOf(
         "title" to listOf("title", "movie", "name", "movie title", "film"),
-        "year" to listOf("year", "release year", "release date"),
+        "year" to listOf("year", "release year"),
         "tmdbid" to listOf("tmdbid", "tmdb id", "tmdb_id"),
         "imdbid" to listOf("imdbid", "imdb id", "imdb_id"),
         "rating" to listOf("rating", "my rating", "personal rating", "score", "user rating"),
@@ -72,10 +68,6 @@ object GenericCsvAdapter {
 
     private fun ratingToDouble(raw: String): Double? {
         val v = raw.trim().toDoubleOrNull() ?: return null
-        return when {
-            v > 10.0 -> null
-            v <= 0.0 -> null
-            else -> v
-        }
+        return if (v in 0.5..10.0) v else null
     }
 }
