@@ -35,6 +35,9 @@ fun MovieBuzzNavHost(navController: NavHostController) {
         composable(Routes.AI) { AiScreen(navController) }
         composable(Routes.IMPORT) { ImportScreen(navController) }
         composable(Routes.SETTINGS) { SettingsScreen(navController) }
-        composable(Routes.MOVIE_DETAIL) { MovieDetailScreen(navController) }
+        composable(Routes.MOVIE_DETAIL) { backStackEntry ->
+            val movieId = backStackEntry.arguments?.getString("movieId")?.toLongOrNull() ?: 0L
+            MovieDetailScreen(navController, movieId)
+        }
     }
 }
