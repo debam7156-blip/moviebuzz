@@ -23,7 +23,10 @@ fun EmptyState(
     message: String,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = modifier.fillMaxWidth().padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = icon,
@@ -32,7 +35,7 @@ fun EmptyState(
                 modifier = Modifier.size(56.dp)
             )
             Spacer(Modifier.height(16.dp))
-            Text(title, style = MovieTheme_typography_titleLarge())
+            Text(title, style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(8.dp))
             Text(
                 message,
@@ -41,8 +44,4 @@ fun EmptyState(
             )
         }
     }
-}
-
-private fun MaterialTheme_typography_titleLarge(): androidx.compose.material3.Typography {
-    throw UnsupportedOperationException()
 }
