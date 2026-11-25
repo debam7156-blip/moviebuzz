@@ -21,13 +21,12 @@ object CsvParser {
     class CsvParseException(message: String) : Exception(message)
 
     fun parse(input: InputStream, maxRows: Int = 200_000): CsvTable {
-        val text = readAllText(input)
-        if (text.isBlank()) throw CsvParseException("File is empty")
+        val text = input.readBytes().toString(Charsets.UTF_8)
         return parseText(text, maxRows)
     }
 
     fun parseText(text: String, maxRows: Int = 200_000): CsvTable {
-        val cleaned = stripBom(text)
+        val cleaned = if (text.startsWith("\uFEFF")) text.substring(1) else text
         if (cleaned.isBlank()) throw CsvParseException("File is empty")
         val delimiter = detectDelimiter(cleaned)
         val records = parseRecords(cleaned, delimiter)
@@ -39,7 +38,6 @@ object CsvParser {
             if (rows.size >= maxRows) break
             val record = records[i]
             if (record.size != headers.size) {
-                // Tolerate trailing empty lines, reject misaligned rows for the caller to decide
                 if (record.all { it.isBlank() }) continue
                 throw CsvParseException("Row ${i + 1} has ${record.size} fields but header has ${headers.size}")
             }
@@ -47,9 +45,6 @@ object CsvParser {
         }
         return CsvTable(headers, rows)
     }
-
-    private fun stripBom(text: String): String =
-        if (text.startsWith("\uFEFF")) text.substring(1) else text
 
     private fun detectDelimiter(text: String): Char {
         val firstLine = text.lineSequence().firstOrNull() ?: return ','
@@ -76,30 +71,53 @@ object CsvParser {
 
     private fun parseRecords(text: String, delimiter: Char): List<List<String>> {
         val records = mutableListOf<List<String>>()
-        val field = StringBuilder()
         val fields = mutableListOf<String>()
-        var i = 0
+        val field = StringBuilder()
         var inQuotes = false
         var fieldStarted = false
+
+        fun endField() {
+            fields.add(field.toString())
+            field.setLength(0)
+            fieldStarted = false
+        }
+
+        fun endRecord() {
+            endField()
+            records.add(fields.toList())
+            fields.clear()
+        }
+
+        var i = 0
         while (i < text.length) {
             val c = text[i]
-            when {
-                inQuotes -> {
-                    when {
-                        c == '"' -> {
-                            if (i + 1 < text.length && text[i + 1] == '"') {
-                                field.append('"'); i++
-                            } else {
-                                inQuotes = false
-                            }
-                        }
-                        else -> field.append(c)
+            if (inQuotes) {
+                if (c == '"') {
+                    if (i + 1 < text.length && text[i + 1] == '"') {
+                        field.append('"')
+                        i++
+                    } else {
+                        inQuotes = false
                     }
+                } else {
+                    field.append(c)
                 }
-                else -> when (c) commaCase@{ }
+            } else if (c == '"') {
+                inQuotes = true
+                fieldStarted = true
+            } else if (c == delimiter) {
+                endField()
+            } else if (c == '\r') {
+                // handled by \n below
+            } else if (c == '\n') {
+                endRecord()
+            } else {
+                field.append(c)
+                fieldStarted = true
             }
             i++
         }
+        if (field.isNotEmpty() || fieldStarted || fields.isNotEmpty()) endRecord()
         return records
     }
 }
