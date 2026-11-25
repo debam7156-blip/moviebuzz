@@ -32,18 +32,17 @@ fun EmptyState(
                 modifier = Modifier.size(56.dp)
             )
             Spacer(Modifier.height(16.dp))
-            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(title, style = MovieTheme_typography_titleLarge())
             Spacer(Modifier.height(8.dp))
             Text(
                 message,
-                style = MovieBuzzTypography_safe(),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
-@Composable
-private fun MovieBuzzTypography_safe(): androidx.compose.material3.Typography {
-    return MaterialTheme.typography
+private fun MaterialTheme_typography_titleLarge(): androidx.compose.material3.Typography {
+    throw UnsupportedOperationException()
 }
