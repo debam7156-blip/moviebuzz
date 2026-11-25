@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -35,11 +34,6 @@ interface MovieDao {
     @Query("SELECT * FROM movies WHERE LOWER(title) = LOWER(:title) AND year = :year LIMIT 1")
     suspend fun byTitleYear(title: String, year: Int): MovieEntity?
 
-    @Query(
-        "SELECT * FROM movies WHERE LOWER(title) = LOWER(:title) ORDER BY ABS(COALESCE(year,0) - :year) ASC LIMIT 1"
-    )
-    suspend fun byTitleClosestYear(title: String, year: Int): MovieEntity?
-
     @Query("SELECT * FROM movies WHERE watched = 1 ORDER BY updatedAt DESC")
     fun observeWatched(): Flow<List<MovieEntity>>
 
@@ -49,11 +43,35 @@ interface MovieDao {
     @Query("SELECT * FROM movies WHERE isFavorite = 1 ORDER BY updatedAt DESC")
     fun observeFavorites(): Flow<List<MovieEntity>>
 
-    @Query("SELECT * FROM movies WHERE title LIKE '%' || :query || '%' COLLATE NOCASE ORDER BY title ASC LIMIT 100")
+    @Query(
+        "SELECT * FROM movies WHERE title LIKE '%' || :query || '%' COLLATE NOCASE " +
+            "ORDER BY CASE WHEN watched = 1 THEN 0 ELSE 1 END, title COLLATE NOCASE LIMIT 200"
+    )
     suspend fun search(query: String): List<MovieEntity>
+
+    @Query("UPDATE movies SET watched = 1, updatedAt = :now WHERE id = :id")
+    suspend fun markWatched(id: Long, now: Long)
+
+    @Query("UPDATE movies SET personalRating = :rating, ratingScale = :scale, updatedAt = :now WHERE id = :id")
+    suspend fun setRating(id: Long, rating: Double?, scale: Int, now: Long)
+
+    @Query("UPDATE movies SET isFavorite = :favorite, updatedAt = :now WHERE id = :id")
+    suspend fun setFavorite(id: Long, favorite: Boolean, now: Long)
+
+    @Query("UPDATE movies SET watchlist = :watchlist, updatedAt = :now WHERE id = :id")
+    suspend fun setWatchlist(id: Long, watchlist: Boolean, now: Long)
+
+    @Query("UPDATE movies SET review = :review, updatedAt = :now WHERE id = :id")
+    suspend fun setReview(id: Long, review: String?, now: Long)
+
+    @Query("UPDATE movies SET notes = :notes, updatedAt = :now WHERE id = :id")
+    suspend fun setNotes(id: Long, notes: String?, now: Long)
 
     @Query("SELECT COUNT(*) FROM movies")
     suspend fun count(): Int
+
+    @Query("DELETE FROM movies WHERE id = :id")
+    suspend fun delete(id: Long)
 
     @Query("DELETE FROM movies")
     suspend fun deleteAll()
