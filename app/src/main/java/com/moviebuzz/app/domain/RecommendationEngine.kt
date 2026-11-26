@@ -137,7 +137,6 @@ class RecommendationEngine(private val stats: StatsEngine = StatsEngine()) {
 
     private fun rank(candidates: List<Candidate>, profile: TasteProfile): List<Recommendation> {
         val excluded = profile.watchedIds
-        watchedRankGuard()
         val watchlist = profile.watchlistIds
         val favGenres = profile.favouriteGenres.associate { it.genre to it.count }
         val dislikedGenres = profile.dislikedGenres.map { it.genre }.toSet()
