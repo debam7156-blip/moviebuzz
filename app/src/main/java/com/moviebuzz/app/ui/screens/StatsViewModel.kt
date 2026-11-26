@@ -60,7 +60,7 @@ class StatsViewModel(private val db: MovieBuzzDatabase) : ViewModel() {
                     longestStreak = engine.longestStreak(snapshot),
                     currentStreak = engine.currentStreak(snapshot),
                     favouriteCount = engine.favouriteMovies(snapshot).size,
-                    genres = engine.genreStats(snapshot, 8),
+                    genres = engine.genreStats(snapshot).take(8),
                     topDirectors = engine.topDirectors(snapshot, 5),
                     topActors = engine.topActors(snapshot, 5),
                     rewatched = engine.mostRewatched(snapshot, 5),
