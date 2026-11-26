@@ -79,7 +79,7 @@ class StatsEngine {
     fun genreStats(s: LibrarySnapshot): List<GenreStat> {
         val watched = watchedMovies(s)
         if (watched.isEmpty()) return emptyList()
-        val counts = watched.flatMap { it.genres }.grouping().eachCount()
+        val counts = watched.flatMap { it.genres }.groupingBy { it }.eachCount()
         val n = watched.size
         return counts.entries
             .map { (genre, count) ->
@@ -99,7 +99,7 @@ class StatsEngine {
             .filter { it.year != null }
             .groupBy { it.year!! }
             .mapValues { (_, moviesInYear) ->
-                val counts = moviesInYear.flatMap { it.genres }.grouping().eachCount()
+                val counts = moviesInYear.flatMap { it.genres }.groupingBy { it }.eachCount()
                 counts.entries
                     .map { (genre, count) ->
                         val rated = moviesInYear.filter { genre in it.genres }.mapNotNull { it.personalRating }
@@ -183,9 +183,8 @@ class StatsEngine {
     fun ratingDistribution(s: LibrarySnapshot): Map<Int, Int> {
         val buckets = watchedMovies(s)
             .mapNotNull { it.personalRating }
-            .grouping()
+            .groupingBy { bucketToStar(it) }
             .eachCount()
-            .mapKeys { bucketToStar(it.key) }
         return (0..5).associateWith { star -> buckets[star] ?: 0 }
     }
 
@@ -244,6 +243,6 @@ class StatsEngine {
     }
 
     fun favouriteIndustries(s: LibrarySnapshot, limit: Int = 10): List<Pair<String, Int>> =
-        watchedMovies(s).flatMap { it.countries }.grouping().eachCount()
+        watchedMovies(s).flatMap { it.countries }.groupingBy { it }.eachCount()
             .entries.sortedByDescending { it.value }.take(limit).map { it.key to it.value }
 }
