@@ -25,20 +25,20 @@ abstract class MovieBuzzDatabase : RoomDatabase() {
     abstract fun watchEventDao(): WatchEventDao
     abstract fun customListDao(): CustomListDao
     abstract fun tagDao(): TagDao
-    database fun get(context: Context): MovieBuzzDatabase =
-        instance ?: synchronized(this) {
-            instance ?: Room.databaseBuilder(
-                context.applicationContext,
-               database, MovieBuzzDatabase::class.java,
-                "moviebuzz.db"
-            )
-                .fallbackToDestructiveMigrationOnDowngrade()
-                .build()
-                .also { instance = it }
-        }
-    }
 
     companion object {
         @Volatile private var instance: MovieBuzzDatabase? = null
+
+        fun get(context: Context): MovieBuzzDatabase =
+            instance ?: synchronized(this) {
+                instance ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    MovieBuzzDatabase::class.java,
+                    "moviebuzz.db"
+                )
+                    .fallbackToDestructiveMigrationOnDowngrade()
+                    .build()
+                    .also { instance = it }
+            }
     }
 }
