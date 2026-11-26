@@ -19,27 +19,26 @@ import androidx.room.TypeConverters
     version = 1,
     exportSchema = false
 )
-@TypeConverters(StringListConverter::class)
+@TypeConverters(Converters::class)
 abstract class MovieBuzzDatabase : RoomDatabase() {
     abstract fun movieDao(): MovieDao
     abstract fun watchEventDao(): WatchEventDao
     abstract fun customListDao(): CustomListDao
     abstract fun tagDao(): TagDao
-    abstract fun importUnresolvedDao(): ImportUnresolvedDao
+    database fun get(context: Context): MovieBuzzDatabase =
+        instance ?: synchronized(this) {
+            instance ?: Room.databaseBuilder(
+                context.applicationContext,
+               database, MovieBuzzDatabase::class.java,
+                "moviebuzz.db"
+            )
+                .fallbackToDestructiveMigrationOnDowngrade()
+                .build()
+                .also { instance = it }
+        }
+    }
 
     companion object {
         @Volatile private var instance: MovieBuzzDatabase? = null
-
-        fun get(context: Context): MovieBuzzDatabase =
-            instance ?: synchronized(this) {
-                instance ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    MovieBuzzDatabase::class.java,
-                    "moviebuzz.db"
-                )
-                    .fallbackToDestructiveMigrationOnDowngrade()
-                    .build()
-                    .also { instance = it }
-            }
     }
 }
