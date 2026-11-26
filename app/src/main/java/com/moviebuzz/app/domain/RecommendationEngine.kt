@@ -58,9 +58,9 @@ class RecommendationEngine(private val stats: StatsEngine = StatsEngine()) {
                 .sortedBy { it.averageRating },
             favouriteDirectors = stats.topDirectors(snapshot, 15),
             favouriteActors = stats.topActors(snapshot, 20),
-            favouriteCountries = watched.flatMap { it.countries }.grouping().eachCount()
+            favouriteCountries = watched.flatMap { it.countries }.groupingBy { it }.eachCount()
                 .entries.sortedByDescending { it.value }.take(5).map { it.key },
-            favouriteLanguages = watched.flatMap { it.languages }.grouping().eachCount()
+            favouriteLanguages = watched.flatMap { it.languages }.groupingBy { it }.eachCount()
                 .entries.sortedByDescending { it.value }.take(5).map { it.key },
             highlyRated = rated.filter { it.personalRating!! >= highBar }.sortedByDescending { it.personalRating },
             lowRated = rated.filter { it.personalRating!! <= lowBar }.sortedBy { it.personalRating },
@@ -137,6 +137,7 @@ class RecommendationEngine(private val stats: StatsEngine = StatsEngine()) {
 
     private fun rank(candidates: List<Candidate>, profile: TasteProfile): List<Recommendation> {
         val excluded = profile.watchedIds
+        watchedRankGuard()
         val watchlist = profile.watchlistIds
         val favGenres = profile.favouriteGenres.associate { it.genre to it.count }
         val dislikedGenres = profile.dislikedGenres.map { it.genre }.toSet()
