@@ -202,7 +202,7 @@ object ImportAdapters {
             }
         }
 
-        fun fromCsv(bytes: ByteArray, fileName: String): List<AdapterResult> =
+        fun fromCsv(bytes: ByteArray, fileName: String): List<AdapterResult> {
             try {
                 val table = CsvParser.parse(bytes.inputStream())
                 val headers = table.headers.map { it.trim().lowercase() }
@@ -210,10 +210,11 @@ object ImportAdapters {
                 if (findColumn(headers, TITLE_HEADERS) == null) {
                     return listOf(FileError(fileName, "No recognizable title column. Found: ${headers.joinToString()}"))
                 }
-                table.rows.mapIndexed { i, row -> rowToRecord(row, headers, i + 2, source, fileName) }
+                return table.rows.mapIndexed { i, row -> rowToRecord(row, headers, i + 2, source, fileName) }
             } catch (e: Exception) {
-                listOf(FileError(fileName, "Could not parse: ${e.message}"))
+                return listOf(FileError(fileName, "Could not parse: ${e.message}"))
             }
+        }
 
         private fun rowToRecord(row: Map<String, String>, headers: List<String>, rowNumber: Int, source: String, fileName: String): AdapterResult {
             val title = findValue(row, headers, TITLE_HEADERS).orBlankTrim()
