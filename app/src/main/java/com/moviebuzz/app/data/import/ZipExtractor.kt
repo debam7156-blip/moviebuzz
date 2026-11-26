@@ -33,7 +33,6 @@ object ZipExtractor {
                     validateEntryName(name)
                 } catch (e: ZipSecurityException) {
                     zip.closeEntry()
-                    entry = zip.nextEntry
                     continue
                 }
                 if (name.lowercase().endsWith(".csv")) {
@@ -48,11 +47,12 @@ object ZipExtractor {
                         buffer.write(chunk, 0, read)
                     }
                     out.add(ExtractedCsv(name, buffer.toByteArray()))
-                } zip.closeEntry()
-                entry = zip.nextEntry
                 }
-            return out
+                zip.closeEntry()
+                entry = zip.nextEntry
+            }
         }
+        return out
     }
 
     private fun validateEntryName(name: String) {
