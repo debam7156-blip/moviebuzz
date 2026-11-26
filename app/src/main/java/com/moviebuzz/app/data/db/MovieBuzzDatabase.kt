@@ -25,6 +25,7 @@ abstract class MovieBuzzDatabase : RoomDatabase() {
     abstract fun watchEventDao(): WatchEventDao
     abstract fun customListDao(): CustomListDao
     abstract fun tagDao(): TagDao
+    abstract fun importUnresolvedDao(): ImportUnresolvedDao
 
     companion object {
         @Volatile private var instance: MovieBuzzDatabase? = null
