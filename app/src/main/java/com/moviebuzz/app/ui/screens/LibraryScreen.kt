@@ -31,12 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.moviebuzz.app.data.tmdb.TmdbImages
+import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
 import com.moviebuzz.app.ui.components.EmptyState
 import com.moviebuzz.app.ui.components.MovieCard
 import com.moviebuzz.app.ui.nav.Routes
 
 @Composable
-fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel()) {
+fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel(factory = MovieBuzzViewModelFactory)) {
     val state by vm.state.collectAsState()
 
     Scaffold(
@@ -70,7 +71,7 @@ fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel
                     .padding(horizontal = 16.dp)
             )
             Spacer(Modifier.height(8.dp))
-            Row(
+            androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
@@ -113,13 +114,13 @@ fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel
                     icon = Icons.Outlined.Movie,
                     title = if (state.filters.query.isBlank()) "Your library is empty" else "No matches",
                     message = if (state.filters.query.isBlank())
-                        "Import your history from Letterboxd or add films from Discover."
+                        "Watch and rate films, or add movies to your watchlist — they appear here."
                     else
                         "Try a different search or clear the filters."
                 )
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(120.dp),
+                    columns = GridCells.Adaptive(124.dp),
                     state = rememberLazyGridState(),
                     contentPadding = PaddingValues(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -130,6 +131,7 @@ fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel
                             title = movie.title,
                             year = movie.year?.toString() ?: "",
                             posterUrl = TmdbImages.posterUrl(movie.posterPath),
+                            rating = movie.personalRating?.let { "%.1f".format(it) },
                             onClick = { navController.navigate(Routes.movieDetail(movie.id)) }
                         )
                     }

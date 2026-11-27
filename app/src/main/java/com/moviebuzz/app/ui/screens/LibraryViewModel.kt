@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 /**
  * Library screen state. All data comes from Room via Flow, so the library is
  * live-updated (import, watch, rate) with no manual refresh anywhere.
+ * The library shows only the user's personal movies (watched / watchlist /
+ * favourites / rated / reviewed) — not every cached TMDB row.
  */
 class LibraryViewModel(private val movieDao: MovieDao) : ViewModel() {
 
@@ -38,7 +40,7 @@ class LibraryViewModel(private val movieDao: MovieDao) : ViewModel() {
     private val filters = MutableStateFlow(Filters())
 
     val state: StateFlow<UiState> =
-        combine(movieDao.observeAll(), filters) { all, f ->
+        combine(movieDao.observePersonal(), filters) { all, f ->
             UiState(
                 filters = f,
                 movies = applyFilters(all, f),
@@ -51,18 +53,6 @@ class LibraryViewModel(private val movieDao: MovieDao) : ViewModel() {
     fun toggleWatchedFilter() { filters.value = filters.value.copy(onlyWatched = !filters.value.onlyWatched) }
     fun toggleFavoritesFilter() { filters.value = filters.value.copy(onlyFavorites = !filters.value.onlyFavorites) }
     fun toggleWatchlistFilter() { filters.value = filters.value.copy(onlyWatchlist = !filters.value.onlyWatchlist) }
-
-    fun markWatched(movie: MovieEntity) = viewModelScope.launch {
-        movieDao.markWatched(movie.id, System.currentTimeMillis())
-    }
-
-    fun toggleFavorite(movie: MovieEntity) = viewModelScope.launch {
-        movieDao.setFavorite(movie.id, !movie.isFavorite, System.currentTimeMillis())
-    }
-
-    fun toggleWatchlist(movie: MovieEntity) = viewModelScope.launch {
-        movieDao.setWatchlist(movie.id, !movie.watchlist, System.currentTimeMillis())
-    }
 
     private fun applyFilters(all: List<MovieEntity>, f: Filters): List<MovieEntity> {
         var list = all

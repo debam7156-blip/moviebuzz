@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -33,6 +31,10 @@ import com.moviebuzz.app.data.db.MovieDao
 import com.moviebuzz.app.data.db.MovieEntity
 import com.moviebuzz.app.data.tmdb.TmdbImages
 import com.moviebuzz.app.data.tmdb.TmdbRepository
+import com.moviebuzz.app.data.tmdb.friendlyTmdbError
+import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
+import com.moviebuzz.app.ui.components.EmptyState
+import com.moviebuzz.app.ui.components.ErrorState
 import com.moviebuzz.app.ui.components.MovieCard
 import com.moviebuzz.app.ui.components.PosterRowSkeleton
 import com.moviebuzz.app.ui.nav.Routes
@@ -41,7 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class DiscoverViewModel(
-    private val tmdbRepository: TmdbRepository?,
+    private val tmdbRepository: TmdbRepository,
     private val movieDao: MovieDao
 ) : ViewModel() {
 
@@ -50,7 +52,9 @@ class DiscoverViewModel(
         val trending: List<MovieEntity> = emptyList(),
         val popular: List<MovieEntity> = emptyList(),
         val upcoming: List<MovieEntity> = emptyList(),
-        val topRated: List<MovieEntity> = emptyList()
+        val topRated: List<MovieEntity> = emptyList(),
+        val recentlyReleased: List<MovieEntity> = emptyList(),
+        val error: String? = null
     )
 
     private val _ui = MutableStateFlow(DiscoverUi())
@@ -60,25 +64,37 @@ class DiscoverViewModel(
 
     fun loadAll() {
         viewModelScope.launch {
-            if (tmdbRepository == null) {
-                _ui.value = DiscoverUi(loading = false)
-                return@launch
+            _ui.value = _ui.value.copy(loading = true, error = null)
+            try {
+                val results = listOf(
+                    tmdbRepository.trending(1),
+                    tmdbRepository.popular(1),
+                    tmdbRepository.upcoming(1),
+                    tmdbRepository.topRated(1),
+                    tmdbRepository.nowPlaying(1)
+                )
+                _ui.value = DiscoverUi(
+                    loading = false,
+                    trending = results[0],
+                    popular = results[1],
+                    upcoming = results[2],
+                    topRated = results[3],
+                    recentlyReleased = results[4]
+                )
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                _ui.value = _ui.value.copy(loading = false, error = friendlyTmdbError(e))
             }
-            val t = tmdbRepository.trending(1)
-            val p = tmdbRepository.popular(1)
-            val u = tmdbRepository.upcoming(1)
-            val r = tmdbRepository.topRated(1)
-            _ui.value = DiscoverUi(loading = false, trending = t, popular = p, upcoming = u, topRated = r)
         }
     }
 }
 
 @Composable
-fun DiscoverScreen(navController: NavController, vm: DiscoverViewModel = viewModel()) {
+fun DiscoverScreen(navController: NavController, vm: DiscoverViewModel = viewModel(factory = MovieBuzzViewModelFactory)) {
     val ui by vm.ui.collectAsState()
     var selected by remember { mutableIntStateOf(0) }
-    val feeds = listOf("Trending", "Popular", "Upcoming", "Top rated")
-    val lists = listOf(ui.trending, ui.popular, ui.upcoming, ui.topRated)
+    val feeds = listOf("Trending", "Popular", "Upcoming", "Top rated", "In theaters")
+    val lists = listOf(ui.trending, ui.popular, ui.upcoming, ui.topRated, ui.recentlyReleased)
 
     Scaffold(topBar = { TopAppBar(title = { Text("Discover") }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -94,12 +110,13 @@ fun DiscoverScreen(navController: NavController, vm: DiscoverViewModel = viewMod
             } else {
                 val list = lists[selected]
                 if (list.isEmpty()) {
-                    Column(Modifier.padding(24.dp)) {
-                        Text("No data", style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "TMDB is unreachable right now (no key configured or offline). Your library still works offline.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (ui.error != null) {
+                        ErrorState(message = ui.error, onRetry = { vm.loadAll() })
+                    } else {
+                        EmptyState(
+                            icon = androidx.compose.material.icons.Icons.Filled.Search,
+                            title = "Nothing here yet",
+                            message = "This feed returned no movies. Try again in a moment."
                         )
                     }
                 } else {
@@ -112,6 +129,7 @@ fun DiscoverScreen(navController: NavController, vm: DiscoverViewModel = viewMod
                                         title = movie.title,
                                         year = movie.year?.toString() ?: "",
                                         posterUrl = TmdbImages.posterUrl(movie.posterPath),
+                                        rating = movie.tmdbVoteAverage?.let { "%.1f".format(it) },
                                         onClick = { navController.navigate(Routes.movieDetail(movie.id)) }
                                     )
                                 }
