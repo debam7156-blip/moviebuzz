@@ -1,8 +1,5 @@
 package com.moviebuzz.app.domain
 
-import kotlin.math.abs
-import kotlin.math.roundToInt
-
 /**
  * Pure-Kotlin statistics engine. All computations run over a snapshot of the
  * user's real data — never fabricated, never estimated. Missing values are
@@ -39,7 +36,7 @@ data class WatchEventForStats(
 data class GenreStat(val genre: String, val count: Int, val share: Double, val averageRating: Double?)
 data class PersonStat(val name: String, val count: Int, val averageRating: Double?)
 data class YearStat(val year: Int, val movies: Int, val sessions: Int, val averageRating: Double?)
-data class MonthStat(val year: Int, val month: Int, sessions: Int)
+data class MonthStat(val year: Int, val month: Int, val sessions: Int)
 
 class StatsEngine {
 
@@ -248,7 +245,4 @@ class StatsEngine {
     fun favouriteIndustries(s: LibrarySnapshot, limit: Int = 10): List<Pair<String, Int>> =
         watchedMovies(s).flatMap { it.countries }.groupingBy { it }.eachCount()
             .entries.sortedByDescending { it.value }.take(limit).map { it.key to it.value }
-
-    private val unusedAbs = ::abs
-    private val unusedRound = ::roundToInt
 }

@@ -1,5 +1,7 @@
 package com.moviebuzz.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,86 +25,117 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.moviebuzz.app.BuildConfig
+import com.moviebuzz.app.data.settings.SettingsStore
+import com.moviebuzz.app.data.sync.BackupManager
+import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-/**
- * Settings — now fully functional:
- * - Enter/clear the TMDB API key at runtime (stored in DataStore, never in code).
- * - Export a full JSON backup and restore it.
- * - Everything works offline.
- */
-@Composable
-fun SettingsScreen(navController: NavController) {
-    val context = LocalContext.current
-    val app = context.applicationContext as com.moviebuzz.app.MovieBuzzApp
-    val container = app.container
-    val apiKeyProvider = container.apiKeyProvider
-    val backupManager = container.backupManager
+class SettingsViewModel(
+    private val settingsStore: SettingsStore,
+    private val backupManager: BackupManager
+) : ViewModel() {
 
-    var keyInput by remember { mutableStateOf("") }
-    var keyStatus by remember { mutableStateOf<String?>(null) }
-    var busy by remember { mutableStateOf(false) }
+    data class SettingsUi(
+        val busy: Boolean = false,
+        val keyConfigured: Boolean = false,
+        val message: String? = null
+    )
 
-    fun saveKey() {
-        busy = true
-        keyStatus = null
-        androidx.compose.runtime.rememberCoroutineScope().launch {
+    private val _ui = MutableStateFlow(SettingsUi())
+    val ui: StateFlow<SettingsUi> = _ui
+
+    suspend fun isKeyConfigured(): Boolean = settingsStore.storedKey().isNotBlank()
+
+    fun saveKey(newKey: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(busy = true, message = null)
             try {
-                apiKeyProvider.update(keyInput)
-                keyStatus = if (keyInput.isBlank()) "Cleared — build-time key in use (if any)."
-                else "Saved. TMDB features will use this key."
+                settingsStore.setTmdbKey(newKey)
+                _ui.value = _ui.value.copy(
+                    busy = false,
+                    keyConfigured = newKey.isNotBlank(),
+                    message = if (newKey.isBlank())
+                        "Cleared — the build-time key will be used (if one was provided)."
+                    else "Saved. Online TMDB features will use this key now."
+                )
             } catch (e: Exception) {
-                keyStatus = "Could not save: ${e.message}"
-            } finally {
-                busy = false
+                _ui.value = _ui.value.copy(busy = false, message = "Could not save: ${e.message}")
             }
         }
     }
 
-    fun exportBackup() {
-        busy = true
-        keyStatus = null
-        androidx.compose.runtime.rememberCoroutineScope().launch {
+    fun exportBackup(uri: android.net.Uri, resolver: android.content.ContentResolver) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(busy = true, message = null)
             try {
                 val json = backupManager.export()
-                val intent = android.content.Intent(android.content.Intent.ACTION_CREATE_DOCUMENT).apply {
-                    addCategory(android.content.Intent.CATEGORY_OPENABLE)
-                    type = "application/json"
-                    putExtra(android.content.Intent.EXTRA_TITLE, "moviebuzz-backup-${System.currentTimeMillis()}.json")
-                }
-                // Simple, reliable flow: write to app files dir and share via ACTION_SEND.
-                val dir = android.os.Environment.getExternalStorageDirectory()
-                val fileName = "moviebuzz-backup.json"
-                val file = java.io.File(context.cacheDir, fileName)
-                file.writeText(json)
-                val uri = androidx.core.content.FileProvider.getUriForFile(
-                    context, "${context.packageName}.fileprovider", file
-                )
-                val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                    type = "application/json"
-                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(android.content.Intent.createChooser(share, "Save backup"))
-                keyStatus = "Backup ready — choose where to save it."
+                resolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                    ?: throw IllegalStateException("Could not open destination file")
+                _ui.value = _ui.value.copy(busy = false, message = "Backup exported successfully.")
             } catch (e: Exception) {
-                keyStatus = "Export failed: ${e.message}"
-            } finally {
-                busy = false
+                _ui.value = _ui.value.copy(busy = false, message = "Export failed: ${e.message}")
             }
         }
+    }
+
+    fun restoreBackup(uri: android.net.Uri, resolver: android.content.ContentResolver) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(busy = true, message = null)
+            try {
+                val json = resolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+                    ?: throw IllegalStateException("Could not read the selected file")
+                val result = backupManager.restore(json)
+                _ui.value = _ui.value.copy(
+                    busy = false,
+                    message = result.failedReason
+                        ?: "Restored ${result.restoredMovies} new movies, merged ${result.mergedMovies}, " +
+                            "and restored ${result.restoredWatchEvents} watch events."
+                )
+            } catch (e: Exception) {
+                _ui.value = _ui.value.copy(busy = false, message = "Restore failed: ${e.message}")
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsScreen(
+    navController: NavController,
+    vm: SettingsViewModel = viewModel(factory = MovieBuzzViewModelFactory)
+) {
+    val ui by vm.ui.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var keyInput by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) vm.exportBackup(uri, context.contentResolver)
+    }
+
+    val restoreLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) vm.restoreBackup(uri, context.contentResolver)
     }
 
     Scaffold(
@@ -129,7 +163,7 @@ fun SettingsScreen(navController: NavController) {
                     Text("TMDB API key", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Free key from themoviedb.org. Stored only on this device; never committed to any repository.",
+                        "Free key from themoviedb.org. Stored only on this device — never committed to the repository.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -138,25 +172,36 @@ fun SettingsScreen(navController: NavController) {
                         value = keyInput,
                         onValueChange = { keyInput = it },
                         placeholder = {
-                            Text(if (apiKeyProvider.isConfigured()) "•••• configured — type to replace" else "Paste your TMDB v3 key")
+                            Text(if (ui.keyConfigured) "Configured — type a new key to replace" else "Paste your TMDB v3 key")
                         },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Button(onClick = { saveKey() }, enabled = !busy) { Text("Save key") }
-                        OutlinedButton(onClick = { keyInput = ""; saveKey() }, enabled = !busy) { Text("Clear") }
-                        if (busy) CircularProgressIndicator(Modifier.height(24.dp).width? .height(24.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(onClick = { vm.saveKey(keyInput) }, enabled = !ui.busy) {
+                            Text("Save key")
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                keyInput = ""
+                                vm.saveKey("")
+                            },
+                            enabled = !ui.busy
+                        ) { Text("Clear") }
+                        if (ui.busy) CircularProgressIndicator(Modifier.size(24.dp))
                     }
-                    keyStatus?.let {
+                    ui.message?.let {
                         Spacer(Modifier.height(4.dp))
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     }
-                    if (!BuildConfig.TMDB_API_KEY.isBlank()) {
+                    if (BuildConfig.TMDB_API_KEY.isNotBlank()) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "A build-time key is also active (from local.properties / CI). The runtime key overrides it.",
+                            "A build-time key is also active (from local.properties / CI). A key saved here overrides it.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -169,12 +214,21 @@ fun SettingsScreen(navController: NavController) {
                     Text("Backup & restore", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Export your entire library (movies, ratings, reviews, watch history, collections, tags) as a portable JSON file.",
+                        "Export your entire library (movies, ratings, reviews, watch history, collections, tags) as a portable JSON file, or restore one.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
-                    Button(onClick = { exportBackup() }, enabled = !busy) { Text("Export backup") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { exportLauncher.launch("moviebuzz-backup.json") },
+                            enabled = !ui.busy
+                        ) { Text("Export") }
+                        OutlinedButton(
+                            onClick = { restoreLauncher.launch(arrayOf("application/json")) },
+                            enabled = !ui.busy
+                        ) { Text("Restore") }
+                    }
                 }
             }
 
