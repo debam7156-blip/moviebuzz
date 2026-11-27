@@ -1,5 +1,7 @@
 package com.moviebuzz.app.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -87,10 +90,7 @@ fun MovieDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        ui.movie?.title ?: "",
-                        maxLines = 1
-                    )
+                    Text(ui.movie?.title ?: "", maxLines = 1)
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -101,34 +101,34 @@ fun MovieDetailScreen(
         }
     ) { padding ->
         val m = ui.movie
-        when {
-            ui.loading -> Box(
+        if (ui.loading) {
+            Box(
                 Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
-
-            ui.notFound || m == null -> Box(Modifier.fillMaxSize().padding(padding)) {
+        } else if (ui.notFound || m == null) {
+            Box(Modifier.fillMaxSize().padding(padding)) {
                 EmptyState(
                     icon = Icons.Outlined.Search,
                     title = "Movie not found",
-                    message = "This movie is not in your library yet and could not be fetched. Check your connection, or find it via Discover or Search."
+                    message = "This movie is not in your library yet and could not be fetched. " +
+                        "Check your connection, or find it via Discover or Search."
                 )
             }
+        } else if (m != null) {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
 
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding)
-            ) {
                 // ---- Hero ----
                 item {
                     HeroSection(m, onPlayTrailer = {
                         val key = m.trailerKey
                         if (!key.isNullOrBlank()) {
                             context.startActivity(
-                                android.content.Intent(
-                                    android.content.Intent.ACTION_VIEW,
-                                    android.net.Uri.parse("https://www.youtube.com/watch?v=$key")
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://www.youtube.com/watch?v=$key")
                                 )
                             )
                         }
@@ -146,7 +146,10 @@ fun MovieDetailScreen(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Button(
                                 onClick = { vm.toggleWatched() },
                                 colors = if (m.watched) ButtonDefaults.buttonColors(
@@ -187,9 +190,9 @@ fun MovieDetailScreen(
                             Text("Directed by $it", style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.height(4.dp))
                         }
-                        if (m.tmdbVoteAverage != null) {
+                        m.tmdbVoteAverage?.let { average ->
                             Text(
-                                "TMDB ★ %.1f (${m.tmdbVoteCount ?: 0} votes)".format(m.tmdbVoteAverage),
+                                "TMDB ★ %.1f (${m.tmdbVoteCount ?: 0} votes)".format(average),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -213,17 +216,21 @@ fun MovieDetailScreen(
                         Text("Cast", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(8.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(m.cast.take(20)) { name ->
-                                val index = m.cast.indexOf(name)
+                            itemsIndexed(m.cast.take(20)) { index, name ->
                                 val character = m.castCharacters.getOrNull(index)
                                 val profile = m.castProfiles.getOrNull(index)?.let { TmdbImages.profileUrl(it) }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(84.dp)) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.width(84.dp)
+                                ) {
                                     if (profile != null) {
                                         AsyncImage(
                                             model = profile,
                                             contentDescription = "$name headshot",
                                             contentScale = ContentScale.Crop,
-                                            modifier = Modifier.size(84.dp).clip(RoundedCornerShape(42.dp))
+                                            modifier = Modifier
+                                                .size(84.dp)
+                                                .clip(RoundedCornerShape(42.dp))
                                         )
                                     } else {
                                         Surface(
@@ -341,6 +348,7 @@ fun MovieDetailScreen(
                         }
                     }
                 }
+
                 item { Spacer(Modifier.height(32.dp)) }
             }
         }
