@@ -25,6 +25,14 @@ class AiViewModel(private val db: MovieBuzzDatabase) : ViewModel() {
     private val _ui = MutableStateFlow(AiUi())
     val ui: StateFlow<AiUi> = _ui
 
+    /**
+     * Recommendations the user has already acted on in this session (liked or
+     * dismissed). Acting on a card removes it from every section so the
+     * thumbs-up/down buttons have visible, immediate effect instead of being
+     * placeholders that silently recompute the same list.
+     */
+    private val handled = mutableSetOf<Long>()
+
     init { refresh() }
 
     private fun snapshotOf(movies: List<com.moviebuzz.app.data.db.MovieEntity>, events: List<com.moviebuzz.app.data.db.WatchEventEntity>): LibrarySnapshot =
@@ -56,7 +64,7 @@ class AiViewModel(private val db: MovieBuzzDatabase) : ViewModel() {
             val profile = engine.buildTasteProfile(snapshot, watchlistIds)
 
             val candidates = movies
-                .filter { !it.watched }
+                .filter { !it.watched && it.id !in handled }
                 .map {
                     RecommendationEngine.Candidate(
                         id = it.id, title = it.title, year = it.year,
@@ -81,8 +89,20 @@ class AiViewModel(private val db: MovieBuzzDatabase) : ViewModel() {
         }
     }
 
-    fun like(id: Long) { refresh() }
-    fun dislike(id: Long) { refresh() }
+    /** 'Helpful' → add the movie to the watchlist and drop it from the sections. */
+    fun like(id: Long) {
+        if (!handled.add(id)) return
+        viewModelScope.launch {
+            db.movieDao().setWatchlist(id, true, System.currentTimeMillis())
+            refresh()
+        }
+    }
+
+    /** 'Not for me' → dismiss the movie from this session's sections. */
+    fun dislike(id: Long) {
+        if (!handled.add(id)) return
+        refresh()
+    }
 
     /** Conversational answers grounded in the on-device engines — works offline. */
     fun ask(question: String) {
