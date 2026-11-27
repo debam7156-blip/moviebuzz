@@ -26,9 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
 
 @Composable
-fun ImportScreen(navController: NavController, vm: ImportViewModel = viewModel()) {
+fun ImportScreen(
+    navController: NavController,
+    vm: ImportViewModel = viewModel(factory = MovieBuzzViewModelFactory)
+) {
     val state by vm.state.collectAsState()
 
     val picker = rememberLauncherForActivityResult(
