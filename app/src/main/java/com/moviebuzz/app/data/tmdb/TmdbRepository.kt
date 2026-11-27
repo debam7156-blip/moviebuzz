@@ -93,7 +93,10 @@ class TmdbRepository(
     private val feedCache = ConcurrentHashMap<String, CacheEntry>()
     private val cacheTtlMs: Long = 10 * 60 * 1000L
 
-    private fun requireKey() {
+    private suspend fun requireKey() {
+        // Wait for the DataStore read at app start before judging the key missing
+        // (fixes a startup race that produced false 'no key configured' errors).
+        apiKeyProvider.ensureLoaded()
         if (!apiKeyProvider.isConfigured()) throw TmdbKeyMissingException()
     }
 
@@ -196,7 +199,7 @@ class TmdbRepository(
 
     /**
      * Persist a list of lightweight movie rows and return the full database rows
-n     * (real ids, stable keys for lazy lists, offline-capable navigation targets).
+     * (real ids, stable keys for lazy lists, offline-capable navigation targets).
      */
     private suspend fun ensureMovies(list: List<MovieEntity>): List<MovieEntity> {
         val unique = list.filter { it.tmdbId != null }.distinctBy { it.tmdbId!! }

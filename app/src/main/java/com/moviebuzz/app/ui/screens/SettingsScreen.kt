@@ -29,8 +29,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,15 +41,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.moviebuzz.app.BuildConfig
-import com.moviebuzz.app.data.settings.SettingsStore
 import com.moviebuzz.app.data.sync.BackupManager
+import com.moviebuzz.app.data.tmdb.ApiKeyProvider
 import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
-    private val settingsStore: SettingsStore,
+    private val apiKeyProvider: ApiKeyProvider,
     private val backupManager: BackupManager
 ) : ViewModel() {
 
@@ -61,19 +62,30 @@ class SettingsViewModel(
     private val _ui = MutableStateFlow(SettingsUi())
     val ui: StateFlow<SettingsUi> = _ui
 
-    suspend fun isKeyConfigured(): Boolean = settingsStore.storedKey().isNotBlank()
+    init {
+        // Reflect the already-configured key (runtime or build-time) on first show.
+        viewModelScope.launch {
+            apiKeyProvider.ensureLoaded()
+            _ui.value = _ui.value.copy(keyConfigured = apiKeyProvider.isConfigured())
+        }
+    }
 
+    /**
+     * Save or clear the runtime key. Goes through ApiKeyProvider so both the
+     * DataStore copy AND the live in-memory key used by the network layer
+     * update immediately — no app restart needed.
+     */
     fun saveKey(newKey: String) {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(busy = true, message = null)
             try {
-                settingsStore.setTmdbKey(newKey)
+                apiKeyProvider.update(newKey)
                 _ui.value = _ui.value.copy(
                     busy = false,
-                    keyConfigured = newKey.isNotBlank(),
+                    keyConfigured = apiKeyProvider.isConfigured(),
                     message = if (newKey.isBlank())
                         "Cleared — the build-time key will be used (if one was provided)."
-                    else "Saved. Online TMDB features will use this key now."
+                    else "Saved. Online TMDB features will use this key immediately."
                 )
             } catch (e: Exception) {
                 _ui.value = _ui.value.copy(busy = false, message = "Could not save: ${e.message}")
@@ -122,9 +134,8 @@ fun SettingsScreen(
 ) {
     val ui by vm.ui.collectAsState()
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
-    var keyInput by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var keyInput by remember { mutableStateOf("") }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")

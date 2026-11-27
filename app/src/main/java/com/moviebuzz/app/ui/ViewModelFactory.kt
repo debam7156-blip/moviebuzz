@@ -46,7 +46,7 @@ object MovieBuzzViewModelFactory : ViewModelProvider.Factory {
             CollectionDetailViewModel::class.java ->
                 CollectionDetailViewModel(extras.createSavedStateHandle(), db.customListDao())
             SettingsViewModel::class.java ->
-                SettingsViewModel(container.settingsStore, container.backupManager)
+                SettingsViewModel(container.apiKeyProvider, container.backupManager)
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
         return vm as T
