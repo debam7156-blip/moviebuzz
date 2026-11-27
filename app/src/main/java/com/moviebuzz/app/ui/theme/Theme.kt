@@ -5,9 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 
 object MovieBuzzColors {
-    val Black = androidx.compose.ui.graphics.Color(0xFF000000)
-    val Charcoal = androidx.compose.ui.graphics.Color(0xFF121212)
-    val CharcoalElevated = androidx.compose.ui.graphics.Color(0xFF1C1C1E)
+    val Black = androidx.compose.ui.graphics.Color(0xFF0B0B0F)
+    val Charcoal = androidx.compose.ui.graphics.Color(0xFF14141B)
+    val CharcoalElevated = androidx.compose.ui.graphics.Color(0xFF1E1E27)
     val Gold = androidx.compose.ui.graphics.Color(0xFFFFD54A)
     val GoldDim = androidx.compose.ui.graphics.Color(0xFFB29600)
     val TextPrimary = androidx.compose.ui.graphics.Color(0xFFF5F5F5)
