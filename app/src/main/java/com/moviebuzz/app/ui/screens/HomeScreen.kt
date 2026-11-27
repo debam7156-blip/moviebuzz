@@ -1,19 +1,17 @@
 package com.moviebuzz.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Movie
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,16 +23,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.moviebuzz.app.data.db.MovieEntity
 import com.moviebuzz.app.data.tmdb.TmdbImages
 import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
-import com.moviebuzz.app.ui.components.EmptyState
 import com.moviebuzz.app.ui.components.ErrorState
 import com.moviebuzz.app.ui.components.MovieCard
 import com.moviebuzz.app.ui.components.PosterRowSkeleton
 import com.moviebuzz.app.ui.nav.Routes
 
 @Composable
-fun HomeScreen(navController: NavController, vm: HomeViewModel = viewModel(factory = MovieBuzzViewModelFactory)) {
+fun HomeScreen(
+    navController: NavController,
+    vm: HomeViewModel = viewModel(factory = MovieBuzzViewModelFactory)
+) {
     val ui by vm.ui.collectAsState()
 
     Scaffold(topBar = { TopAppBar(title = { Text("MOVIEBUZZ") }) }) { padding ->
@@ -46,7 +47,7 @@ fun HomeScreen(navController: NavController, vm: HomeViewModel = viewModel(facto
             item {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     Text("Your personal movie universe.", style = MaterialTheme.typography.headlineMedium)
-                    if (ui.recommended.isEmpty() && ui.error != null) {
+                    if (!ui.loading && ui.error != null) {
                         Spacer(Modifier.height(4.dp))
                         Text(
                             ui.error,
@@ -63,17 +64,14 @@ fun HomeScreen(navController: NavController, vm: HomeViewModel = viewModel(facto
                 item { SectionLabel("Popular right now") }
                 item { PosterRowSkeleton() }
             } else {
-                FeedSection("Trending this week", ui.trending, ui.loading, navController)
-                FeedSection("Popular right now", ui.popular, ui.loading, navController)
-                FeedSection("Recently released", ui.recentlyReleased, ui.loading, navController)
-                FeedSection("Upcoming soon", ui.upcoming, ui.loading, navController)
-                FeedSection("Recommended for you", ui.recommended, ui.loading, navController)
+                FeedSection("Trending this week", ui.trending, navController)
+                FeedSection("Popular right now", ui.popular, navController)
+                FeedSection("Recently released", ui.recentlyReleased, navController)
+                FeedSection("Upcoming soon", ui.upcoming, navController)
+                FeedSection("Recommended for you", ui.recommended, navController)
                 if (ui.error != null) {
                     item {
-                        ErrorState(
-                            message = ui.error,
-                            onRetry = { vm.refresh() }
-                        )
+                        ErrorState(message = ui.error, onRetry = { vm.refresh() })
                     }
                 }
             }
@@ -90,11 +88,10 @@ private fun SectionLabel(title: String) {
     )
 }
 
-@Composable
-private fun FeedSection(
+/** Renders a horizontal movie feed — a LazyListScope extension so `item {}` works. */
+private fun LazyListScope.FeedSection(
     title: String,
-    movies: List<com.moviebuzz.app.data.db.MovieEntity>,
-    loading: Boolean,
+    movies: List<MovieEntity>,
     navController: NavController
 ) {
     if (movies.isEmpty()) return

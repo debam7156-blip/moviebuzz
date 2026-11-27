@@ -1,11 +1,10 @@
 package com.moviebuzz.app.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,21 +16,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,15 +56,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.moviebuzz.app.data.db.CustomListEntity
 import com.moviebuzz.app.data.db.MovieEntity
 import com.moviebuzz.app.data.tmdb.TmdbImages
+import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
 import com.moviebuzz.app.ui.components.EmptyState
 import com.moviebuzz.app.ui.components.MovieCard
 import com.moviebuzz.app.ui.nav.Routes
-import com.moviebuzz.app.ui.screens.collections.CollectionsViewModel
 
 private val RatingStars = 1..10
 
@@ -74,7 +73,7 @@ private val RatingStars = 1..10
 fun MovieDetailScreen(
     navController: NavController,
     movieId: Long,
-    vm: MovieDetailViewModel = detailViewModel()
+    vm: MovieDetailViewModel = viewModel(factory = MovieBuzzViewModelFactory)
 ) {
     val ui by vm.ui.collectAsState()
     val watchHistory by vm.watchHistory.collectAsState()
@@ -90,8 +89,7 @@ fun MovieDetailScreen(
                 title = {
                     Text(
                         ui.movie?.title ?: "",
-                        maxLines = 1,
-                        modifier = Modifier.padding(end = 8.dp)
+                        maxLines = 1
                     )
                 },
                 navigationIcon = {
@@ -110,30 +108,34 @@ fun MovieDetailScreen(
             ) {
                 CircularProgressIndicator()
             }
-            ui.notFound || m == null -> EmptyState(
-                icon = Icons.Outlined.Search,
-                title = "Movie not found",
-                message = "This movie is not in your library yet and could not be fetched. Check your connection or add the movie from Discover or Search."
-            )
+
+            ui.notFound || m == null -> Box(Modifier.fillMaxSize().padding(padding)) {
+                EmptyState(
+                    icon = Icons.Outlined.Search,
+                    title = "Movie not found",
+                    message = "This movie is not in your library yet and could not be fetched. Check your connection, or find it via Discover or Search."
+                )
+            }
+
             else -> LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
+                modifier = Modifier.fillMaxSize().padding(padding)
             ) {
                 // ---- Hero ----
-                item { HeroSection(m, ui.offlineNotice, onPlayTrailer = {
-                    val key = m.trailerKey
-                    if (!key.isNullOrBlank()) {
-                        context.startActivity(
-                            Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("https://www.youtube.com/watch?v=$key")
-                            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        )
-                    }
-                }) }
+                item {
+                    HeroSection(m, onPlayTrailer = {
+                        val key = m.trailerKey
+                        if (!key.isNullOrBlank()) {
+                            context.startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://www.youtube.com/watch?v=$key")
+                                )
+                            )
+                        }
+                    })
+                }
 
-                // ---- Actions ----
+                // ---- Offline notice + actions ----
                 item {
                     Column(Modifier.padding(horizontal = 16.dp)) {
                         ui.offlineNotice?.let {
@@ -144,13 +146,13 @@ fun MovieDetailScreen(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Button(
                                 onClick = { vm.toggleWatched() },
-                                colors = if (m.watched) androidx.compose.material3.ButtonDefaults.buttonColors(
+                                colors = if (m.watched) ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.secondary,
                                     contentColor = MaterialTheme.colorScheme.onSecondary
-                                ) else androidx.compose.material3.ButtonDefaults.buttonColors()
+                                ) else ButtonDefaults.buttonColors()
                             ) {
                                 Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
@@ -170,9 +172,89 @@ fun MovieDetailScreen(
                     }
                 }
 
+                // ---- Metadata ----
+                item {
+                    Column(Modifier.padding(16.dp)) {
+                        if (m.genres.isNotEmpty()) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                m.genres.take(4).forEach { genre ->
+                                    AssistChip(onClick = {}, label = { Text(genre) })
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                        }
+                        m.director?.let {
+                            Text("Directed by $it", style = MaterialTheme.typography.bodyMedium)
+                            Spacer(Modifier.height(4.dp))
+                        }
+                        if (m.tmdbVoteAverage != null) {
+                            Text(
+                                "TMDB ★ %.1f (${m.tmdbVoteCount ?: 0} votes)".format(m.tmdbVoteAverage),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(4.dp))
+                        }
+                        m.overview?.let {
+                            Spacer(Modifier.height(8.dp))
+                            Text("Overview", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // ---- Cast ----
+                if (m.cast.isNotEmpty()) item {
+                    Column(Modifier.padding(horizontal = 16.dp)) {
+                        Text("Cast", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(m.cast.take(20)) { name ->
+                                val index = m.cast.indexOf(name)
+                                val character = m.castCharacters.getOrNull(index)
+                                val profile = m.castProfiles.getOrNull(index)?.let { TmdbImages.profileUrl(it) }
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(84.dp)) {
+                                    if (profile != null) {
+                                        AsyncImage(
+                                            model = profile,
+                                            contentDescription = "$name headshot",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.size(84.dp).clip(RoundedCornerShape(42.dp))
+                                        )
+                                    } else {
+                                        Surface(
+                                            shape = RoundedCornerShape(42.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant,
+                                            modifier = Modifier.size(84.dp)
+                                        ) {}
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        name,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        maxLines = 1
+                                    )
+                                    character?.let {
+                                        Text(
+                                            it,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ---- Rating ----
                 item {
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+                    Column(Modifier.padding(16.dp)) {
                         Text("Your rating", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(4.dp))
                         Row {
@@ -266,7 +348,7 @@ fun MovieDetailScreen(
 }
 
 @Composable
-private fun HeroSection(m: MovieEntity, offlineNotice: String?, onPlayTrailer: () -> Unit) {
+private fun HeroSection(m: MovieEntity, onPlayTrailer: () -> Unit) {
     Box(Modifier.fillMaxWidth()) {
         val backdropUrl = TmdbImages.backdropUrl(m.backdropPath ?: m.posterPath)
         if (backdropUrl != null) {
@@ -277,9 +359,7 @@ private fun HeroSection(m: MovieEntity, offlineNotice: String?, onPlayTrailer: (
                 modifier = Modifier.fillMaxWidth().height(240.dp)
             )
         } else {
-            Box(
-                Modifier.fillMaxWidth().height(240.dp).background(MaterialTheme.colorScheme.surfaceVariant)
-            )
+            Box(Modifier.fillMaxWidth().height(240.dp).background(MaterialTheme.colorScheme.surfaceVariant))
         }
         Box(
             Modifier
@@ -287,7 +367,7 @@ private fun HeroSection(m: MovieEntity, offlineNotice: String?, onPlayTrailer: (
                 .height(240.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color.Transparent, Color(0xCC000000), Color(0xFF000000))
+                        listOf(Color.Transparent, Color(0x99000000), Color(0xFF0B0B0F))
                     )
                 )
         )
@@ -295,9 +375,7 @@ private fun HeroSection(m: MovieEntity, offlineNotice: String?, onPlayTrailer: (
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = Color(0x99000000),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp)
+                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
             ) {
                 IconButton(onClick = onPlayTrailer) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = "Play trailer")
@@ -305,7 +383,7 @@ private fun HeroSection(m: MovieEntity, offlineNotice: String?, onPlayTrailer: (
             }
         }
         Column(Modifier.padding(16.dp)) {
-            Spacer(Modifier.height(120.dp))
+            Spacer(Modifier.height(128.dp))
             Row(verticalAlignment = Alignment.Top) {
                 AsyncImage(
                     model = TmdbImages.posterUrl(m.posterPath),
@@ -318,11 +396,8 @@ private fun HeroSection(m: MovieEntity, offlineNotice: String?, onPlayTrailer: (
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
                 Spacer(Modifier.width(16.dp))
-                Column(Modifier.padding(top = 40.dp)) {
-                    Text(
-                        m.title,
-                        style = MaterialTheme.typography.headlineMedium
-                    )
+                Column {
+                    Text(m.title, style = MaterialTheme.typography.headlineMedium)
                     m.tagline?.takeIf { it.isNotBlank() }?.let {
                         Text(
                             it,
@@ -334,8 +409,7 @@ private fun HeroSection(m: MovieEntity, offlineNotice: String?, onPlayTrailer: (
                     Text(
                         listOfNotNull(
                             m.year?.toString(),
-                            m.runtimeMinutes?.let { "$it min" },
-                            m.releaseDate
+                            m.runtimeMinutes?.let { "$it min" }
                         ).joinToString(" · "),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -358,7 +432,7 @@ private fun SectionHeader(title: String) {
 @Composable
 private fun PosterRow(movies: List<MovieEntity>, onMovieClick: (MovieEntity) -> Unit) {
     LazyRow(
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(movies, key = { it.id }) { movie ->

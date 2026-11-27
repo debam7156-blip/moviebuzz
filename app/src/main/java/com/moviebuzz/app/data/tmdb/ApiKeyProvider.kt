@@ -9,9 +9,10 @@ import com.moviebuzz.app.data.settings.SettingsStore
  * Priority: runtime key saved in Settings (DataStore) -> build-time key
  * (local.properties / CI secret). The key is never hardcoded and never committed.
  */
-class ApiKeyProvider(context: Context) {
-
-    private val store = SettingsStore(context)
+class ApiKeyProvider(
+    context: Context,
+    private val store: SettingsStore
+) {
     private val buildKey: String = BuildConfig.TMDB_API_KEY.trim()
 
     @Volatile

@@ -1,8 +1,8 @@
 package com.moviebuzz.app.ui
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.moviebuzz.app.MovieBuzzApp
 import com.moviebuzz.app.ui.screens.AiViewModel
@@ -12,6 +12,7 @@ import com.moviebuzz.app.ui.screens.ImportViewModel
 import com.moviebuzz.app.ui.screens.LibraryViewModel
 import com.moviebuzz.app.ui.screens.MovieDetailViewModel
 import com.moviebuzz.app.ui.screens.SearchViewModel
+import com.moviebuzz.app.ui.screens.SettingsViewModel
 import com.moviebuzz.app.ui.screens.StatsViewModel
 import com.moviebuzz.app.ui.screens.collections.CollectionDetailViewModel
 import com.moviebuzz.app.ui.screens.collections.CollectionsViewModel
@@ -43,15 +44,11 @@ object MovieBuzzViewModelFactory : ViewModelProvider.Factory {
                 ImportViewModel(db, container.appContext.contentResolver)
             CollectionsViewModel::class.java -> CollectionsViewModel(db.customListDao())
             CollectionDetailViewModel::class.java ->
-                CollectionDetailViewModel(extras.createSavedStateHandle() ?: SavedStateHandle(), db.customListDao())
+                CollectionDetailViewModel(extras.createSavedStateHandle(), db.customListDao())
+            SettingsViewModel::class.java ->
+                SettingsViewModel(container.settingsStore, container.backupManager)
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
         return vm as T
-    }
-
-    private fun CreationExtras.createSavedStateHandle(): androidx.lifecycle.SavedStateHandle? = try {
-        androidx.lifecycle.SavedStateHandle()
-    } catch (e: Exception) {
-        null
     }
 }

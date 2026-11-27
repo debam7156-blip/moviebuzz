@@ -2,8 +2,9 @@ package com.moviebuzz.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,8 +37,12 @@ import com.moviebuzz.app.ui.components.EmptyState
 import com.moviebuzz.app.ui.components.MovieCard
 import com.moviebuzz.app.ui.nav.Routes
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel(factory = MovieBuzzViewModelFactory)) {
+fun LibraryScreen(
+    navController: NavController,
+    vm: LibraryViewModel = viewModel(factory = MovieBuzzViewModelFactory)
+) {
     val state by vm.state.collectAsState()
 
     Scaffold(
@@ -71,7 +76,7 @@ fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel
                     .padding(horizontal = 16.dp)
             )
             Spacer(Modifier.height(8.dp))
-            androidx.compose.foundation.layout.FlowRow(
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),

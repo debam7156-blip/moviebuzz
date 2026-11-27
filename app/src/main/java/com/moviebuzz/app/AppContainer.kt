@@ -2,6 +2,7 @@ package com.moviebuzz.app
 
 import android.content.Context
 import com.moviebuzz.app.data.db.MovieBuzzDatabase
+import com.moviebuzz.app.data.settings.SettingsStore
 import com.moviebuzz.app.data.sync.BackupManager
 import com.moviebuzz.app.data.tmdb.ApiKeyProvider
 import com.moviebuzz.app.data.tmdb.TmdbRepository
@@ -16,7 +17,9 @@ class AppContainer(context: Context) {
 
     val database: MovieBuzzDatabase = MovieBuzzDatabase.get(appContext)
 
-    val apiKeyProvider: ApiKeyProvider = ApiKeyProvider(appContext)
+    val settingsStore: SettingsStore = SettingsStore(appContext)
+
+    val apiKeyProvider: ApiKeyProvider = ApiKeyProvider(appContext, settingsStore)
 
     val tmdbRepository: TmdbRepository = TmdbRepository(database.movieDao(), apiKeyProvider)
 
