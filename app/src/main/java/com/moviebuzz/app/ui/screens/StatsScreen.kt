@@ -24,9 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
 
 @Composable
-fun StatsScreen(navController: NavController, vm: StatsViewModel = viewModel()) {
+fun StatsScreen(
+    navController: NavController,
+    vm: StatsViewModel = viewModel(factory = MovieBuzzViewModelFactory)
+) {
     val stats by vm.stats.collectAsState()
 
     Scaffold(topBar = { TopAppBar(title = { Text("Statistics") }) }) { padding ->
@@ -85,7 +89,7 @@ fun StatsScreen(navController: NavController, vm: StatsViewModel = viewModel()) 
                             val max = stats.ratingBuckets.values.max()
                             (5 downTo 1).forEach { star ->
                                 val count = stats.ratingBuckets[star] ?: 0
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
                                     Text("$star★", Modifier.padding(end = 8.dp))
                                     LinearProgressIndicator(
                                         progress = { if (max > 0) count.toFloat() / max else 0f },
