@@ -21,10 +21,17 @@ personalised recommendations — with a dark cinematic Material 3 UI.
 | **Collections** | Create, rename, edit and delete custom collections; add/remove movies from any movie's detail page |
 | **Library** | All personal movies with search, Watched / Watchlist / Favourites filters and sorting |
 | **Statistics** | Films watched, sessions, watch hours, average rating, streaks, genre distribution, rating histogram, most rewatched, top directors/actors — all computed from your real data, never fabricated |
-| **MOVIEBUZZ AI** | 7 personalised on-device recommendation sections (*Made For You, Hidden Gems, Similar to Your Favourites, Directors to Explore, Underrated Discoveries, Outside Your Comfort Zone, Your Next Watch*) with human-readable explanations and a conversational assistant |
+| **MOVIEBUZZ AI** | 7 personalised on-device recommendation sections (*Made For You, Hidden Gems, Similar to Your Favourites, Directors to Explore, Underrated Discoveries, Outside Your Comfort Zone, Your Next Watch*) with human-readable explanations, feedback buttons and a conversational assistant |
 | **Import Engine** | Letterboxd ZIP/CSV import, duplicate-safe and rewatch-aware, with a manual resolution queue for uncertain matches and a detailed import report |
 | **Backup** | Full JSON export/restore of your library, ratings, history, collections and tags |
 | **Offline-first** | Room local database; watchlists, ratings, history, collections, stats and AI all work with no internet; TMDB metadata is cached locally |
+
+## 🧭 Where things live in the app
+
+- **Statistics** — 📈 icon on the Home top bar.
+- **Settings** — ⚙️ icon on the Home top bar (TMDB key, backup & restore).
+- **MOVIEBUZZ AI** — ✨ icon on the Library top bar.
+- **Import** — 📄 icon on the Library top bar.
 
 ## 🎨 Brand
 
@@ -57,7 +64,7 @@ docs/               API key guide
 1. **Prerequisites**: Android Studio (Koala or newer), JDK 17, device/emulator API 26+.
 2. **TMDB API key** (free, needed only for online discovery): create an account at https://www.themoviedb.org/ → Settings → API → request a v3 developer key.
 3. **Configure the key — two options**:
-   - **At runtime (recommended, no rebuild)**: install the app, open **Settings**, paste your key, tap **Save key**. Stored only on your device via DataStore.
+   - **At runtime (recommended, no rebuild)**: install the app, open **Settings** (⚙️ on Home), paste your key, tap **Save key**. It takes effect immediately — no restart needed. Stored only on your device via DataStore.
    - **At build time**: create `local.properties` in the repo root with `MOVIEBUZZ_TMDB_API_KEY=your_key` (Git-ignored), or set the `MOVIEBUZZ_TMDB_API_KEY` secret in GitHub Actions. See `.env.example` and `docs/API_KEYS.md`.
 4. **Build & run**: open in Android Studio and press Run, or from CLI with Gradle 8.9+:
 
@@ -96,7 +103,7 @@ The import engine **never silently discards records**: unmatched rows are saved 
 
 - Moviebase & I Like Movies adapters await validation on real export files (upload one to finalize).
 - The Gradle wrapper JAR is not committed (binaries excluded); run `gradle wrapper` once or let Android Studio generate it.
-- CI builds the APK and uploads it as an artifact; wiring the new `test` step into `.github/workflows/apk.yml` requires the repo owner's GitHub token to have the `workflow` scope (or paste the updated workflow file manually — see the delivery report).
+- CI builds the APK and uploads it as a workflow artifact (download from the Actions run page); the workflow does not yet run the unit-test task, so run `./gradlew test` locally.
 
 ---
 
