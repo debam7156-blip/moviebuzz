@@ -66,4 +66,11 @@ class RecommendationEngineTest {
         val candidates = listOf(candidate(30, "Unrelated", listOf("War")))
         assertTrue(engine.madeForYou(profile, candidates).isEmpty())
     }
+
+    @Test
+    fun `public score alone never creates a recommendation`() {
+        val profile = profile(watchedMovie(1, "Only Film", listOf("Drama"), 8.0))
+        val candidates = listOf(candidate(40, "Popular But Unrelated", listOf("War"), votes = 12_000, avg = 8.4))
+        assertTrue(engine.madeForYou(profile, candidates).isEmpty())
+    }
 }
