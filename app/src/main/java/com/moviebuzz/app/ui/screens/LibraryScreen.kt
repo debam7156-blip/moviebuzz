@@ -15,10 +15,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -39,10 +42,7 @@ import com.moviebuzz.app.ui.nav.Routes
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LibraryScreen(
-    navController: NavController,
-    vm: LibraryViewModel = viewModel(factory = MovieBuzzViewModelFactory)
-) {
+fun LibraryScreen(navController: NavController, vm: LibraryViewModel = viewModel(factory = MovieBuzzViewModelFactory)) {
     val state by vm.state.collectAsState()
 
     Scaffold(
@@ -50,6 +50,12 @@ fun LibraryScreen(
             TopAppBar(
                 title = { Text("Library") },
                 actions = {
+                    IconButton(onClick = { navController.navigate(Routes.AI) }) {
+                        Icon(Icons.Filled.AutoAwesome, contentDescription = "MOVIEBUZZ AI")
+                    }
+                    IconButton(onClick = { navController.navigate(Routes.IMPORT) }) {
+                        Icon(Icons.Filled.UploadFile, contentDescription = "Import history")
+                    }
                     Text(
                         "${state.totalInLibrary} films",
                         style = MaterialTheme.typography.labelMedium,
