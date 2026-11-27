@@ -89,15 +89,29 @@ class StatsEngineTest {
     }
 
     @Test
-    fun `genre stats carry share and average`() {
+    fun `genre average is the mean over all rated films in that genre`() {
         val s = LibrarySnapshot(
-            movies = listOf(movie(1, "A", genres = listOf("Drama"), rating = 9.0), movie(2, "B", genres = listOf("Drama"))),
+            movies = listOf(
+                movie(1, "A", genres = listOf("Drama"), rating = 9.0),
+                movie(2, "B", genres = listOf("Drama"), rating = 7.0)
+            ),
             watchEvents = emptyList()
         )
         val genres = StatsEngine().genreStats(s)
         assertEquals(1, genres.size)
         assertEquals(2, genres[0].count)
-        assertEquals(9.0, genres[0].averageRating!!, 0.001)
+        // Mean over every rated Drama film: (9.0 + 7.0) / 2 = 8.0.
+        assertEquals(8.0, genres[0].averageRating!!, 0.001)
         assertEquals(1.0, genres[0].share, 0.001)
+    }
+
+    @Test
+    fun `genre average is null when no film in genre is rated`() {
+        val s = LibrarySnapshot(
+            movies = listOf(movie(1, "A", genres = listOf("Drama"), rating = null)),
+            watchEvents = emptyList()
+        )
+        val genres = StatsEngine().genreStats(s)
+        assertNull(genres[0].averageRating)
     }
 }
