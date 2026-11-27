@@ -176,7 +176,9 @@ class RecommendationEngine(private val stats: StatsEngine = StatsEngine()) {
                 if (c.languages.any { it in favLanguages }) score += 0.5
                 val votes = c.tmdbVoteCount ?: 0
                 val public = c.tmdbVoteAverage ?: 0.0
-                if (votes >= 100) score += (public - 6.0).coerceAtLeast(0.0) * 0.3
+                // The public score may only *boost* a candidate that already matches
+                // the user's taste — it never creates a recommendation on its own.
+                if (score > 0 && votes >= 100) score += (public - 6.0).coerceAtLeast(0.0) * 0.3
                 if (c.id in watchlist) {
                     score += 1.5
                     reasons.add("Already on your watchlist — high time!")
