@@ -13,6 +13,9 @@ interface MovieDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnore(movie: MovieEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnoreAll(movies: List<MovieEntity>): List<Long>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReplace(movie: MovieEntity): Long
 
@@ -22,17 +25,42 @@ interface MovieDao {
     @Query("SELECT * FROM movies ORDER BY title COLLATE NOCASE ASC")
     fun observeAll(): Flow<List<MovieEntity>>
 
+    /** The user's personal library: only movies with personal data attached. */
+    @Query(
+        """
+        SELECT * FROM movies
+        WHERE watched = 1 OR watchlist = 1 OR isFavorite = 1
+           OR personalRating IS NOT NULL OR review IS NOT NULL
+        ORDER BY title COLLATE NOCASE ASC
+        """
+    )
+    fun observePersonal(): Flow<List<MovieEntity>>
+
     @Query("SELECT * FROM movies WHERE id = :id")
     suspend fun byId(id: Long): MovieEntity?
 
     @Query("SELECT * FROM movies WHERE tmdbId = :tmdbId LIMIT 1")
     suspend fun byTmdbId(tmdbId: Long): MovieEntity?
 
+    @Query("SELECT * FROM movies WHERE tmdbId IN (:tmdbIds)")
+    suspend fun byTmdbIds(tmdbIds: List<Long>): List<MovieEntity>
+
     @Query("SELECT * FROM movies WHERE imdbId = :imdbId LIMIT 1")
     suspend fun byImdbId(imdbId: String): MovieEntity?
 
     @Query("SELECT * FROM movies WHERE LOWER(title) = LOWER(:title) AND year = :year LIMIT 1")
     suspend fun byTitleYear(title: String, year: Int): MovieEntity?
+
+    /** Seed for personalized recommendations: best-rated watched movie with a TMDB id. */
+    @Query(
+        """
+        SELECT * FROM movies
+        WHERE watched = 1 AND tmdbId IS NOT NULL
+        ORDER BY COALESCE(personalRating, 0) DESC, updatedAt DESC
+        LIMIT 1
+        """
+    )
+    suspend fun bestWatchedWithTmdbId(): MovieEntity?
 
     @Query("SELECT * FROM movies WHERE watched = 1 ORDER BY updatedAt DESC")
     fun observeWatched(): Flow<List<MovieEntity>>
@@ -51,6 +79,9 @@ interface MovieDao {
 
     @Query("UPDATE movies SET watched = 1, updatedAt = :now WHERE id = :id")
     suspend fun markWatched(id: Long, now: Long)
+
+    @Query("UPDATE movies SET watched = :watched, updatedAt = :now WHERE id = :id")
+    suspend fun setWatched(id: Long, watched: Boolean, now: Long)
 
     @Query("UPDATE movies SET personalRating = :rating, ratingScale = :scale, updatedAt = :now WHERE id = :id")
     suspend fun setRating(id: Long, rating: Double?, scale: Int, now: Long)

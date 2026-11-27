@@ -10,7 +10,7 @@ interface TmdbService {
     @GET("movie/{movie_id}")
     suspend fun movieDetails(
         @Path("movie_id") movieId: Long,
-        @Query("append_to_response") append: String = "credits,external_ids"
+        @Query("append_to_response") append: String = "credits,external_ids,videos,similar,recommendations"
     ): TmdbMovie
 
     @GET("search/movie")
@@ -31,4 +31,19 @@ interface TmdbService {
 
     @GET("movie/top_rated")
     suspend fun topRated(@Query("page") page: Int = 1): TmdbPage
+
+    @GET("movie/now_playing")
+    suspend fun nowPlaying(@Query("page") page: Int = 1): TmdbPage
+
+    @GET("movie/{movie_id}/recommendations")
+    suspend fun recommendations(
+        @Path("movie_id") movieId: Long,
+        @Query("page") page: Int = 1
+    ): TmdbPage
+
+    @GET("movie/{movie_id}/similar")
+    suspend fun similar(
+        @Path("movie_id") movieId: Long,
+        @Query("page") page: Int = 1
+    ): TmdbPage
 }

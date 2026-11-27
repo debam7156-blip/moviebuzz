@@ -16,28 +16,20 @@ android {
         applicationId = "com.moviebuzz.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
-        // API keys are injected at build time from local.properties / environment.
-        // They are never committed to the repository.
+        // The TMDB key is injected at build time from local.properties / CI secrets.
+        // It can also be entered at runtime in Settings (stored in DataStore).
+        // Keys are never committed to the repository.
         val localProps = Properties().apply {
             val f = rootProject.file("local.properties")
             if (f.exists()) f.inputStream().use { load(it) }
         }
         val tmdbKey = localProps.getProperty("MOVIEBUZZ_TMDB_API_KEY")
             ?: System.getenv("MOVIEBUZZ_TMDB_API_KEY") ?: ""
-        val aiEndpoint = localProps.getProperty("MOVIEBUZZ_AI_ENDPOINT")
-            ?: System.getenv("MOVIEBUZZ_AI_ENDPOINT") ?: ""
-        val syncUrl = localProps.getProperty("MOVIEBUZZ_SYNC_URL")
-            ?: System.getenv("MOVIEBUZZ_SYNC_URL") ?: ""
-        val syncToken = localProps.getProperty("MOVIEBUZZ_SYNC_TOKEN")
-            ?: System.getenv("MOVIEBUZZ_SYNC_TOKEN") ?: ""
 
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
-        buildConfigField("String", "AI_ENDPOINT", "\"$aiEndpoint\"")
-        buildConfigField("String", "SYNC_URL", "\"$syncUrl\"")
-        buildConfigField("String", "SYNC_TOKEN", "\"$syncToken\"")
     }
 
     buildTypes {
@@ -97,7 +89,6 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
-    implementation(libs.work.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)

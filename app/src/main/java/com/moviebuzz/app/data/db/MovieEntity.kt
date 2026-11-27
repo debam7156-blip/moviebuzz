@@ -20,6 +20,9 @@ data class MovieEntity(
     val year: Int? = null,
     val releaseDate: String? = null,
     val overview: String? = null,
+    val tagline: String? = null,
+    val status: String? = null,
+    val trailerKey: String? = null,
     val posterPath: String? = null,
     val backdropPath: String? = null,
     val runtimeMinutes: Int? = null,
@@ -29,6 +32,8 @@ data class MovieEntity(
     val languages: List<String> = emptyList(),
     val productionCompanies: List<String> = emptyList(),
     val cast: List<String> = emptyList(),
+    val castCharacters: List<String> = emptyList(),
+    val castProfiles: List<String> = emptyList(),
     val tmdbVoteAverage: Double? = null,
     val tmdbVoteCount: Int? = null,
     // Personal data
