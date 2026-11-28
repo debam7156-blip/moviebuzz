@@ -1,5 +1,6 @@
 package com.moviebuzz.app.data.sync
 
+import com.moviebuzz.app.data.db.ImportUnresolvedEntity
 import kotlinx.serialization.Serializable
 
 /**
@@ -10,14 +11,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BackupPayload(
     val format: String = "moviebuzz-backup",
-    val version: Int = 1,
+    val version: Int = 2,
     val exportedAt: Long,
     val movies: List<BackupMovie> = emptyList(),
     val watchEvents: List<BackupWatchEvent> = emptyList(),
     val lists: List<BackupList> = emptyList(),
     val listEntries: List<BackupListEntry> = emptyList(),
     val tags: List<String> = emptyList(),
-    val movieTags: List<BackupMovieTag> = emptyList()
+    val movieTags: List<BackupMovieTag> = emptyList(),
+    val importIssues: List<BackupImportIssue> = emptyList()
 )
 
 @Serializable
@@ -77,3 +79,37 @@ data class BackupMovieTag(
     val movieTmdbId: Long?,
     val tagName: String
 )
+
+/** An unresolved import row, preserved in the backup so review is never lost. */
+@Serializable
+data class BackupImportIssue(
+    val source: String,
+    val fileLabel: String,
+    val rowNumber: Int,
+    val rawJson: String,
+    val title: String,
+    val year: Int? = null,
+    val createdAt: Long = 0
+) {
+    companion object {
+        fun fromEntity(e: ImportUnresolvedEntity) = BackupImportIssue(
+            source = e.source,
+            fileLabel = e.fileLabel,
+            rowNumber = e.rowNumber,
+            rawJson = e.rawJson,
+            title = e.title,
+            year = e.year,
+            createdAt = e.createdAt
+        )
+    }
+
+    fun toEntity() = ImportUnresolvedEntity(
+        source = source,
+        fileLabel = fileLabel,
+        rowNumber = rowNumber,
+        rawJson = rawJson,
+        title = title,
+        year = year,
+        createdAt = createdAt
+    )
+}
