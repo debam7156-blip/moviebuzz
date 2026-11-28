@@ -15,6 +15,7 @@ import androidx.navigation.navArgument
 import com.moviebuzz.app.ui.screens.AiScreen
 import com.moviebuzz.app.ui.screens.DiscoverScreen
 import com.moviebuzz.app.ui.screens.HomeScreen
+import com.moviebuzz.app.ui.screens.ImportIssuesScreen
 import com.moviebuzz.app.ui.screens.ImportScreen
 import com.moviebuzz.app.ui.screens.LibraryScreen
 import com.moviebuzz.app.ui.screens.MovieDetailScreen
@@ -34,6 +35,7 @@ object Routes {
     const val STATS = "stats"
     const val AI = "ai"
     const val IMPORT = "import"
+    const val IMPORT_ISSUES = "import-issues"
     const val SETTINGS = "settings"
     const val MOVIE_DETAIL = "movie/{movieId}"
     fun movieDetail(movieId: Long) = "movie/$movieId"
@@ -73,6 +75,7 @@ fun MovieBuzzNavHost(navController: NavHostController) {
         composable(Routes.STATS) { StatsScreen(navController) }
         composable(Routes.AI) { AiScreen(navController) }
         composable(Routes.IMPORT) { ImportScreen(navController) }
+        composable(Routes.IMPORT_ISSUES) { ImportIssuesScreen(navController) }
         composable(Routes.SETTINGS) { SettingsScreen(navController) }
         composable(
             Routes.MOVIE_DETAIL,
