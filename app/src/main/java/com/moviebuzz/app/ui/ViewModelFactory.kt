@@ -8,6 +8,7 @@ import com.moviebuzz.app.MovieBuzzApp
 import com.moviebuzz.app.ui.screens.AiViewModel
 import com.moviebuzz.app.ui.screens.DiscoverViewModel
 import com.moviebuzz.app.ui.screens.HomeViewModel
+import com.moviebuzz.app.ui.screens.ImportIssuesViewModel
 import com.moviebuzz.app.ui.screens.ImportViewModel
 import com.moviebuzz.app.ui.screens.LibraryViewModel
 import com.moviebuzz.app.ui.screens.MovieDetailViewModel
@@ -42,6 +43,8 @@ object MovieBuzzViewModelFactory : ViewModelProvider.Factory {
             AiViewModel::class.java -> AiViewModel(db)
             ImportViewModel::class.java ->
                 ImportViewModel(db, container.appContext.contentResolver)
+            ImportIssuesViewModel::class.java ->
+                ImportIssuesViewModel(db.importUnresolvedDao())
             CollectionsViewModel::class.java -> CollectionsViewModel(db.customListDao())
             CollectionDetailViewModel::class.java ->
                 CollectionDetailViewModel(extras.createSavedStateHandle(), db.customListDao())
