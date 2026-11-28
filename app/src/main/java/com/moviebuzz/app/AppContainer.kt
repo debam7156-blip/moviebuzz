@@ -27,6 +27,7 @@ class AppContainer(context: Context) {
         movieDao = database.movieDao(),
         watchEventDao = database.watchEventDao(),
         customListDao = database.customListDao(),
-        tagDao = database.tagDao()
+        tagDao = database.tagDao(),
+        importUnresolvedDao = database.importUnresolvedDao()
     )
 }
