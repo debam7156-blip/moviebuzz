@@ -12,10 +12,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -27,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.moviebuzz.app.ui.MovieBuzzViewModelFactory
+import com.moviebuzz.app.ui.nav.Routes
 
 @Composable
 fun ImportScreen(
@@ -41,7 +47,26 @@ fun ImportScreen(
         if (uri != null) vm.importFile(uri)
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Import") }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Import") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate(Routes.IMPORT_ISSUES) }) {
+                        Icon(
+                            androidx.compose.material.icons.Icons.Outlined.Inbox,
+                            contentDescription = "Review unmatched import rows"
+                        )
+                    }
+                }
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -107,9 +132,13 @@ fun ImportScreen(
                             if (report.unresolved > 0) {
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Unmatched rows were saved for review in Settings → Import issues.",
+                                    "Unmatched rows were saved for you to review.",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
+                                Spacer(Modifier.height(8.dp))
+                                OutlinedButton(onClick = { navController.navigate(Routes.IMPORT_ISSUES) }) {
+                                    Text("Review unmatched rows (${report.unresolved})")
+                                }
                             }
                         }
                     }
