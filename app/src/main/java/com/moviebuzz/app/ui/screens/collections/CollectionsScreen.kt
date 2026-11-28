@@ -85,6 +85,7 @@ fun CollectionsScreen(
                         Column(Modifier.padding(16.dp)) {
                             RowWithActions(
                                 name = item.list.name,
+                                description = item.list.description,
                                 count = item.entryCount,
                                 onRename = { newName, newDesc -> vm.renameList(item.list.id, newName, newDesc) },
                                 onDelete = { vm.deleteList(item.list.id) }
@@ -122,6 +123,7 @@ fun CollectionsScreen(
 @Composable
 private fun RowWithActions(
     name: String,
+    description: String?,
     count: Int,
     onRename: (String, String?) -> Unit,
     onDelete: () -> Unit
@@ -150,10 +152,13 @@ private fun RowWithActions(
         }
     }
     if (showRename) {
+        // The description is pre-filled so a rename no longer wipes it:
+        // previously the dialog always opened with an empty description and
+        // saving overwrote the stored one with null.
         NewCollectionDialog(
             title = "Rename collection",
             initialName = name,
-            initialDescription = "",
+            initialDescription = description ?: "",
             confirmLabel = "Save",
             onDismiss = { showRename = false },
             onConfirm = { newName, newDesc ->
