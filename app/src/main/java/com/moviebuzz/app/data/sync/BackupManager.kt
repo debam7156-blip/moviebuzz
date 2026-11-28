@@ -3,6 +3,8 @@ package com.moviebuzz.app.data.sync
 import com.moviebuzz.app.data.db.CustomListDao
 import com.moviebuzz.app.data.db.CustomListEntity
 import com.moviebuzz.app.data.db.CustomListEntryEntity
+import com.moviebuzz.app.data.db.ImportUnresolvedDao
+import com.moviebuzz.app.data.db.ImportUnresolvedEntity
 import com.moviebuzz.app.data.db.MovieDao
 import com.moviebuzz.app.data.db.MovieEntity
 import com.moviebuzz.app.data.db.TagDao
@@ -20,12 +22,15 @@ import kotlinx.serialization.json.Json
  * - Watch events are deduplicated by (movie, date): restoring the same backup
  *   twice never duplicates history.
  * - Lists and tags are re-created only when missing.
+ * - Unresolved import rows are re-created only when an identical row is not
+ *   already queued, so a double restore never duplicates review items.
  */
 class BackupManager(
     private val movieDao: MovieDao,
     private val watchEventDao: WatchEventDao,
     private val customListDao: CustomListDao,
-    private val tagDao: TagDao
+    private val tagDao: TagDao,
+    private val importUnresolvedDao: ImportUnresolvedDao
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
@@ -39,6 +44,7 @@ class BackupManager(
         val entries = customListDao.snapshotEntries()
         val tags = tagDao.snapshotTags()
         val movieTags = tagDao.snapshotMovieTags()
+        val unresolved = importUnresolvedDao.snapshotAll()
 
         val payload = BackupPayload(
             exportedAt = System.currentTimeMillis(),
@@ -55,7 +61,8 @@ class BackupManager(
             lists = lists.map { BackupList(it.name, it.description, it.createdAt) },
             listEntries = entries.map { BackupListEntry(it.listName, it.movieTmdbId) },
             tags = tags,
-            movieTags = movieTags.map { BackupMovieTag(it.movieTmdbId, it.tagName) }
+            movieTags = movieTags.map { BackupMovieTag(it.movieTmdbId, it.tagName) },
+            importIssues = unresolved.map { BackupImportIssue.fromEntity(it) }
         )
         return json.encodeToString(BackupPayload.serializer(), payload)
     }
@@ -74,6 +81,7 @@ class BackupManager(
         var restoredMovies = 0
         var mergedMovies = 0
         var restoredEvents = 0
+        var restoredIssues = 0
 
         // 1. Movies: insert new, merge into existing.
         for (backup in payload.movies) {
@@ -134,10 +142,25 @@ class BackupManager(
             tagDao.insertMovieTag(MovieTagEntity(movieId = movieId, tagId = tagId))
         }
 
+        // 5. Unresolved import rows: only insert rows not already queued.
+        for (issue in payload.importIssues) {
+            val already = importUnresolvedDao.countIdentical(
+                fileLabel = issue.fileLabel,
+                rowNumber = issue.rowNumber,
+                source = issue.source,
+                title = issue.title
+            ) > 0
+            if (!already) {
+                importUnresolvedDao.insert(issue.toEntity())
+                restoredIssues++
+            }
+        }
+
         return RestoreResult(
             restoredMovies = restoredMovies,
             mergedMovies = mergedMovies,
-            restoredWatchEvents = restoredEvents
+            restoredWatchEvents = restoredEvents,
+            restoredImportIssues = restoredIssues
         )
     }
 
@@ -163,6 +186,7 @@ data class RestoreResult(
     val restoredMovies: Int = 0,
     val mergedMovies: Int = 0,
     val restoredWatchEvents: Int = 0,
+    val restoredImportIssues: Int = 0,
     val failedReason: String? = null
 )
 
