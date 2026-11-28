@@ -1,11 +1,9 @@
 package com.moviebuzz.app.ui.nav
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalMovies
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
@@ -51,7 +49,7 @@ data class BottomDestination(
 
 val bottomDestinations = listOf(
     BottomDestination(Routes.HOME, "Home", Icons.Filled.Home),
-    BottomDestination(Routes.DISCOVER, "Discover", Icons.Filled.LocalMovies),
+    BottomDestination(Routes.DISCOVER, "Discover", Icons.Filled.Movie),
     BottomDestination(Routes.SEARCH, "Search", Icons.Filled.Search),
     BottomDestination(Routes.COLLECTIONS, "Collections", Icons.Filled.CollectionsBookmark),
     BottomDestination(Routes.LIBRARY, "Library", Icons.Filled.Star)
