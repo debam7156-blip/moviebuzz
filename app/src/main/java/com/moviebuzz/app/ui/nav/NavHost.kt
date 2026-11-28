@@ -1,29 +1,30 @@
 package com.moviebuzz.app.ui.nav
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Movie
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalMovies
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.moviebuzz.app.ui.screens.HomeScreen
-import com.moviebuzz.app.ui.screens.DiscoverScreen
-import com.moviebuzz.app.ui.screens.LibraryScreen
-import com.moviebuzz.app.ui.screens.SearchScreen
-import com.moviebuzz.app.ui.screens.StatsScreen
 import com.moviebuzz.app.ui.screens.AiScreen
-import com.moviebuzz.app.ui.screens.MovieDetailScreen
+import com.moviebuzz.app.ui.screens.DiscoverScreen
+import com.moviebuzz.app.ui.screens.HomeScreen
 import com.moviebuzz.app.ui.screens.ImportScreen
+import com.moviebuzz.app.ui.screens.LibraryScreen
+import com.moviebuzz.app.ui.screens.MovieDetailScreen
+import com.moviebuzz.app.ui.screens.SearchScreen
 import com.moviebuzz.app.ui.screens.SettingsScreen
-import com.moviebuzz.app.ui.screens.collections.CollectionsScreen
+import com.moviebuzz.app.ui.screens.StatsScreen
 import com.moviebuzz.app.ui.screens.collections.CollectionDetailScreen
+import com.moviebuzz.app.ui.screens.collections.CollectionsScreen
 
 object Routes {
     const val HOME = "home"
@@ -50,9 +51,9 @@ data class BottomDestination(
 
 val bottomDestinations = listOf(
     BottomDestination(Routes.HOME, "Home", Icons.Filled.Home),
-    BottomDestination(Routes.DISCOVER, "Discover", Icons.AutoMirrored.Filled.Movie),
+    BottomDestination(Routes.DISCOVER, "Discover", Icons.Filled.LocalMovies),
     BottomDestination(Routes.SEARCH, "Search", Icons.Filled.Search),
-    BottomDestination(Routes.COLLECTIONS, "Collections", Icons.Outlined.CollectionsBookmark),
+    BottomDestination(Routes.COLLECTIONS, "Collections", Icons.Filled.CollectionsBookmark),
     BottomDestination(Routes.LIBRARY, "Library", Icons.Filled.Star)
 )
 
