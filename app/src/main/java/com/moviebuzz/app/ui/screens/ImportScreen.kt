@@ -38,7 +38,7 @@ fun ImportScreen(
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
-        if (uri != null) vm.import(uri)
+        if (uri != null) vm.importFile(uri)
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Import") }) }) { padding ->

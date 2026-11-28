@@ -110,8 +110,11 @@ fun DiscoverScreen(navController: NavController, vm: DiscoverViewModel = viewMod
             } else {
                 val list = lists[selected]
                 if (list.isEmpty()) {
-                    if (ui.error != null) {
-                        ErrorState(message = ui.error, onRetry = { vm.loadAll() })
+                    // Capture into a local: 'ui' is a delegated property and Kotlin
+                    // never smart-casts delegated properties.
+                    val error = ui.error
+                    if (error != null) {
+                        ErrorState(message = error, onRetry = { vm.loadAll() })
                     } else {
                         EmptyState(
                             icon = androidx.compose.material.icons.Icons.Filled.Search,

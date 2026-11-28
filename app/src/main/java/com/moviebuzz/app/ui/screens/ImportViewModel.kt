@@ -28,7 +28,12 @@ class ImportViewModel(
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state: StateFlow<UiState> = _state
 
-    fun import(uri: Uri) {
+    /**
+     * Named importFile — 'import' is a Kotlin hard keyword and cannot be used
+     * as an identifier, which made the previous `fun import(...)` a syntax error
+     * that broke every build.
+     */
+    fun importFile(uri: Uri) {
         _state.value = UiState.Running("Reading file…")
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {

@@ -143,15 +143,20 @@ fun SearchScreen(
                 ) {
                     items(9) { PosterSkeleton() }
                 }
-                ui.error != null && ui.results.isEmpty() -> ErrorState(
-                    message = ui.error,
-                    onRetry = { vm.setQuery(ui.query) }
-                )
-                ui.results.isEmpty() -> EmptyState(
-                    icon = Icons.Outlined.SearchOff,
-                    title = "No results for \"${ui.query}\"",
-                    message = "Try a different title or check the spelling."
-                )
+                ui.results.isEmpty() -> {
+                    // Capture into a local: 'ui' is a delegated property and Kotlin
+                    // never smart-casts delegated properties.
+                    val error = ui.error
+                    if (error != null) {
+                        ErrorState(message = error, onRetry = { vm.setQuery(ui.query) })
+                    } else {
+                        EmptyState(
+                            icon = Icons.Outlined.SearchOff,
+                            title = "No results for \"${ui.query}\"",
+                            message = "Try a different title or check the spelling."
+                        )
+                    }
+                }
                 else -> {
                     ui.error?.let { Text(it, Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
                     LazyVerticalGrid(

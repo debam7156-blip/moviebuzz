@@ -53,7 +53,8 @@ class AiViewModel(private val db: MovieBuzzDatabase) : ViewModel() {
 
     fun refresh() {
         viewModelScope.launch {
-            val movies = db.movieDao().search("")
+            // snapshotAll() has no row cap — search("") was limited to 200 rows.
+            val movies = db.movieDao().snapshotAll()
             val events = db.watchEventDao().observeAllSnapshot()
             if (movies.count { it.watched } < 5) {
                 _ui.value = AiUi(needsMoreData = true)
@@ -114,7 +115,7 @@ class AiViewModel(private val db: MovieBuzzDatabase) : ViewModel() {
                         ?: "Add a few more watched films so I can pick well for you."
                 }
                 question.contains("genre", ignoreCase = true) -> {
-                    val movies = db.movieDao().search("")
+                    val movies = db.movieDao().snapshotAll()
                     val top = engine.buildTasteProfile(snapshotOf(movies, emptyList()), emptySet()).favouriteGenres.take(3)
                     if (top.isEmpty()) "No ratings yet — once you rate films I can tell your favourite genres."
                     else "Your favourite genres right now: ${top.joinToString(", ") { it.genre }}."
@@ -130,7 +131,7 @@ class AiViewModel(private val db: MovieBuzzDatabase) : ViewModel() {
                         ?: "Once your taste profile is built, I will suggest films outside your usual genres."
                 }
                 question.contains("taste", ignoreCase = true) || question.contains("analys", ignoreCase = true) -> {
-                    val movies = db.movieDao().search("")
+                    val movies = db.movieDao().snapshotAll()
                     val profile = engine.buildTasteProfile(snapshotOf(movies, emptyList()), emptySet())
                     "You have watched ${movies.count { it.watched }} films. " +
                         "Average rating ${profile.averageRating?.let { "%.1f".format(it) } ?: "—"}. " +

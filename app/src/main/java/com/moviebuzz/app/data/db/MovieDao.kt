@@ -77,6 +77,14 @@ interface MovieDao {
     )
     suspend fun search(query: String): List<MovieEntity>
 
+    /**
+     * Full library snapshot with no row cap. Backup export, import matching and
+     * the AI engine must see every movie — search() is capped at LIMIT 200 and
+     * silently truncated large libraries.
+     */
+    @Query("SELECT * FROM movies")
+    suspend fun snapshotAll(): List<MovieEntity>
+
     @Query("UPDATE movies SET watched = 1, updatedAt = :now WHERE id = :id")
     suspend fun markWatched(id: Long, now: Long)
 

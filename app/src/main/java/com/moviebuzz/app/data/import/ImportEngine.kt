@@ -44,7 +44,8 @@ class ImportEngine(
         val missingNotes = sortedSetOf<String>()
 
         // Snapshot of the library; later rows in this run resolve against earlier ones.
-        val mirror = movieDao.search("").toMutableList()
+        // snapshotAll() has no row cap — search("") was limited to 200 rows.
+        val mirror = movieDao.snapshotAll().toMutableList()
 
         fun unresolvedEntity(
             source: String,

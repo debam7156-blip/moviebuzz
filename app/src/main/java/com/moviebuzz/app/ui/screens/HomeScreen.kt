@@ -80,10 +80,14 @@ fun HomeScreen(
                         "Your personal movie universe.",
                         style = MaterialTheme.typography.headlineMedium
                     )
-                    if (!ui.loading && ui.error != null) {
+                    // Capture into a local: 'ui' is a delegated property and Kotlin
+                    // never smart-casts delegated properties, so ui.error must not be
+                    // passed as String directly after a null check.
+                    val banner = if (!ui.loading) ui.error else null
+                    if (banner != null) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            ui.error,
+                            banner,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -102,9 +106,9 @@ fun HomeScreen(
                 FeedSection("Recently released", ui.recentlyReleased, navController)
                 FeedSection("Upcoming soon", ui.upcoming, navController)
                 FeedSection("Recommended for you", ui.recommended, navController)
-                if (ui.error != null) {
+                ui.error?.let { error ->
                     item {
-                        ErrorState(message = ui.error, onRetry = { vm.refresh() })
+                        ErrorState(message = error, onRetry = { vm.refresh() })
                     }
                 }
             }

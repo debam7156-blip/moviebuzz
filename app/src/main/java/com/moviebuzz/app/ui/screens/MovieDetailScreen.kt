@@ -1,7 +1,9 @@
 package com.moviebuzz.app.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -125,12 +127,21 @@ fun MovieDetailScreen(
                     HeroSection(m, onPlayTrailer = {
                         val key = m.trailerKey
                         if (!key.isNullOrBlank()) {
-                            context.startActivity(
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse("https://www.youtube.com/watch?v=$key")
+                            try {
+                                context.startActivity(
+                                    Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse("https://www.youtube.com/watch?v=$key")
+                                    )
                                 )
-                            )
+                            } catch (e: ActivityNotFoundException) {
+                                // Not a silent catch: tell the user why nothing happened.
+                                Toast.makeText(
+                                    context,
+                                    "No app found to open this trailer",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     })
                 }

@@ -31,7 +31,9 @@ class BackupManager(
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
     suspend fun export(): String {
-        val movies = movieDao.search("").sortedBy { it.id }
+        // snapshotAll() has no row cap — search("") was limited to 200 rows and
+        // silently truncated large libraries in the exported backup.
+        val movies = movieDao.snapshotAll().sortedBy { it.id }
         val events = watchEventDao.observeAllSnapshot()
         val lists = customListDao.snapshotLists()
         val entries = customListDao.snapshotEntries()
