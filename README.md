@@ -22,8 +22,9 @@ personalised recommendations — with a dark cinematic Material 3 UI.
 | **Library** | All personal movies with search, Watched / Watchlist / Favourites filters and sorting |
 | **Statistics** | Films watched, sessions, watch hours, average rating, streaks, genre distribution, rating histogram, most rewatched, top directors/actors — all computed from your real data, never fabricated |
 | **MOVIEBUZZ AI** | 7 personalised on-device recommendation sections (*Made For You, Hidden Gems, Similar to Your Favourites, Directors to Explore, Underrated Discoveries, Outside Your Comfort Zone, Your Next Watch*) with human-readable explanations, feedback buttons and a conversational assistant |
-| **Import Engine** | Letterboxd ZIP/CSV import, duplicate-safe and rewatch-aware, with a manual resolution queue for uncertain matches and a detailed import report |
-| **Backup** | Full JSON export/restore of your library, ratings, history, collections and tags |
+| **Import Engine** | Letterboxd ZIP/CSV import, duplicate-safe and rewatch-aware, with a **reviewable resolution queue** (Import screen → inbox icon) and a detailed import report |
+| **Import Issues** | Every unmatched import row is shown in-app with its raw fields; search the title to fix it, dismiss rows, or clear the queue |
+| **Backup** | Full JSON export/restore of your library, ratings, history, collections, tags **and unresolved import rows** |
 | **Offline-first** | Room local database; watchlists, ratings, history, collections, stats and AI all work with no internet; TMDB metadata is cached locally |
 
 ## 🧭 Where things live in the app
@@ -32,6 +33,7 @@ personalised recommendations — with a dark cinematic Material 3 UI.
 - **Settings** — ⚙️ icon on the Home top bar (TMDB key, backup & restore).
 - **MOVIEBUZZ AI** — ✨ icon on the Library top bar.
 - **Import** — 📄 icon on the Library top bar.
+- **Import issues (review queue)** — 📥 inbox icon on the Import top bar, or the button in the import report.
 
 ## 🎨 Brand
 
@@ -46,6 +48,7 @@ personalised recommendations — with a dark cinematic Material 3 UI.
 - **MVVM**: every screen's ViewModel is built by `MovieBuzzViewModelFactory` with real dependencies
 - Pure-Kotlin, fully unit-testable domain layer (`StatsEngine`, `RecommendationEngine`, `ImportEngine`)
 - TMDB feed cache with TTL and stale-cache fallback when offline
+- Full **R8/ProGuard keep rules** so minified release builds do not strip serializers, Retrofit metadata, entities, or converters
 
 ## 📁 Project structure
 
@@ -56,7 +59,7 @@ app/src/main/java/com/moviebuzz/app/
 ├── ui/             theme, components, nav, screens (MVVM)
 app/src/test/       Unit tests: CSV parsing, adapters, stats, recommendations
 docs/               API key guide
-.github/workflows/  CI (APK build)
+.github/workflows/  CI (unit tests + APK build)
 ```
 
 ## 🚀 Quick start
@@ -74,7 +77,7 @@ gradle wrapper --gradle-version 8.9   # one-time, generates ./gradlew
 ./gradlew test                        # unit tests
 ```
 
-**GitHub Actions** builds the APK on every push — download it from the run's *Artifacts* (`.github/workflows/apk.yml`).
+**GitHub Actions** runs the unit tests and builds the APK on every push — download it from the run's *Artifacts* (`.github/workflows/apk.yml`). Failed builds automatically post their compile errors to the **CI build diagnostics** issue so they are readable without downloading logs.
 
 Without a TMDB key the app still launches and every personal feature (watchlist, watched, ratings, collections, stats, AI, import, backup) works — you just won't see online discovery feeds until you add a key.
 
@@ -87,7 +90,7 @@ Without a TMDB key the app still launches and every personal feature (watchlist,
 | **I Like Movies** | ⚠️ Implemented via flexible CSV adapter — **pending validation against a real export file** |
 | **Generic CSV** | ✅ Flexible header mapping, auto delimiter & rating-scale detection |
 
-The import engine **never silently discards records**: unmatched rows are saved to the `import_unresolved` table for review.
+The import engine **never silently discards records**: unmatched rows are saved to the `import_unresolved` table and shown in the **Import issues** review screen (inbox icon on the Import screen).
 
 ## 🔐 Security
 
@@ -97,13 +100,13 @@ The import engine **never silently discards records**: unmatched rows are saved 
 
 ## 🧪 Testing
 
-`./gradlew test` covers: CSV parsing (quotes, CRLF, BOM, delimiters), the flexible CSV adapter (header mapping, rating-scale normalisation), statistics math (nulls, rewatches, streaks, genre averages) and recommendation ranking (watched exclusion, genre affinity, sparse-history and popular-but-unrelated guards).
+`./gradlew test` covers: CSV parsing (quotes, CRLF, BOM, delimiters), the flexible CSV adapter (header mapping, rating-scale normalisation), statistics math (nulls, rewatches, streaks, genre averages) and recommendation ranking (watched exclusion, genre affinity, sparse-history and popular-but-unrelated guards). CI runs the same test task before assembling the APK.
 
 ## ⚠️ Known limitations (honest list)
 
 - Moviebase & I Like Movies adapters await validation on real export files (upload one to finalize).
 - The Gradle wrapper JAR is not committed (binaries excluded); run `gradle wrapper` once or let Android Studio generate it.
-- CI builds the APK and uploads it as a workflow artifact (download from the Actions run page); the workflow does not yet run the unit-test task, so run `./gradlew test` locally.
+- No instrumented UI tests (espresso dependencies are declared but no androidTest suite is written yet); verification is compile + unit tests + manual runtime smoke testing on a device/emulator.
 
 ---
 
