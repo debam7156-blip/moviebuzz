@@ -1,5 +1,11 @@
 package com.moviebuzz.app.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,26 +60,36 @@ fun MovieBuzzRoot(appState: MovieBuzzAppState) {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
-                    bottomDestinations.forEach { dest ->
-                        NavigationBarItem(
-                            icon = { Icon(dest.icon, contentDescription = dest.label) },
-                            label = { Text(dest.label) },
-                            selected = currentRoute == dest.route,
-                            onClick = { appState.navigateToTopLevel(dest.route) },
-                            colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = MaterialTheme.colorScheme.primary,
-                                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary
-                            )
-                        )
+                Box {
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 6.dp
+                    ) {
+                        bottomDestinations.forEach { dest ->
+                            NavigationBarItem(
+                                icon = { Icon(dest.icon, contentDescription = dest.label) },
+                                label = { Text(dest.label) },
+                                selected = currentRoute == dest.route,
+                                onClick = { appState.navigateToTopLevel(dest.route) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     ) { padding ->
-        androidx.compose.foundation.layout.Box(Modifier.padding(padding)) {
+        Box(Modifier.padding(padding)) {
             MovieBuzzNavHost(navController = appState.navController)
         }
     }
 }
+
+private val androidx.compose.ui.unit.Dp.Companion.dpTag: androidx.compose.ui.unit.Dp
+    get() = androidx.compose.ui.unit.Dp(0f)
