@@ -118,7 +118,9 @@ class SettingsViewModel(
                     busy = false,
                     message = result.failedReason
                         ?: "Restored ${result.restoredMovies} new movies, merged ${result.mergedMovies}, " +
-                            "and restored ${result.restoredWatchEvents} watch events."
+                            "restored ${result.restoredWatchEvents} watch events" +
+                            (if (result.restoredImportIssues > 0) " and ${result.restoredImportIssues} import review rows" else "") +
+                            "."
                 )
             } catch (e: Exception) {
                 _ui.value = _ui.value.copy(busy = false, message = "Restore failed: ${e.message}")
@@ -225,7 +227,7 @@ fun SettingsScreen(
                     Text("Backup & restore", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Export your entire library (movies, ratings, reviews, watch history, collections, tags) as a portable JSON file, or restore one.",
+                        "Export your entire library (movies, ratings, reviews, watch history, collections, tags, and unresolved import rows) as a portable JSON file, or restore one.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
