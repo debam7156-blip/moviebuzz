@@ -1,20 +1,20 @@
 package com.moviebuzz.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -46,7 +47,16 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("MOVIEBUZZ") },
+                title = {
+                    Text(
+                        "MOVIEBUZZ",
+                        style = MaterialTheme.typography.headlineSmall,
+                        letterSpacing = 1.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 actions = {
                     IconButton(onClick = { navController.navigate(Routes.STATS) }) {
                         Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = "Statistics")
@@ -61,11 +71,14 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    Text("Your personal movie universe.", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        "Your personal movie universe.",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
                     if (!ui.loading && ui.error != null) {
                         Spacer(Modifier.height(4.dp))
                         Text(
@@ -126,7 +139,8 @@ private fun LazyListScope.FeedSection(
                     year = movie.year?.toString() ?: "",
                     posterUrl = TmdbImages.posterUrl(movie.posterPath),
                     rating = movie.tmdbVoteAverage?.let { "%.1f".format(it) },
-                    onClick = { navController.navigate(Routes.movieDetail(movie.id)) }
+                    onClick = { navController.navigate(Routes.movieDetail(movie.id)) },
+                    modifier = Modifier.width(124.dp)
                 )
             }
         }
